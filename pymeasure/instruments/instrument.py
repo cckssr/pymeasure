@@ -1,7 +1,7 @@
 #
 # This file is part of the PyMeasure package.
 #
-# Copyright (c) 2013-2025 PyMeasure Developers
+# Copyright (c) 2013-2026 PyMeasure Developers
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -73,6 +73,7 @@ class Instrument(CommonBase):
         to :py:class:`~pymeasure.adapters.VISAAdapter` (check there for details).
         Discarded otherwise.
     """
+
     adapter: Adapter
 
     # noinspection PyPep8Naming
@@ -81,22 +82,29 @@ class Instrument(CommonBase):
         adapter: Union[Adapter, int, str],
         name: str,
         includeSCPI: Optional[bool] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         # Setup communication before possible children require the adapter.
         if isinstance(adapter, (int, str)):
             try:
                 adapter = VISAAdapter(adapter, **kwargs)
-            except ImportError:
-                raise Exception("Invalid Adapter provided for Instrument since"
-                                " PyVISA is not present")
+            except ImportError as exc:
+                raise Exception(
+                    "Invalid Adapter provided for Instrument since" " PyVISA is not present"
+                ) from exc
         self.adapter = adapter
         if includeSCPI is True:
-            warn("Defining SCPI base functionality with `includeSCPI=True` is deprecated, inherit "
-                 "the `SCPIMixin` class instead.", FutureWarning)
+            warn(
+                "Defining SCPI base functionality with `includeSCPI=True` is deprecated, inherit "
+                "the `SCPIMixin` class instead.",
+                FutureWarning,
+            )
         elif includeSCPI is None:
-            warn("It is deprecated to specify `includeSCPI` implicitly, use "
-                 "`includeSCPI=False` or inherit the `SCPIMixin` class instead.", FutureWarning)
+            warn(
+                "It is deprecated to specify `includeSCPI` implicitly, use "
+                "`includeSCPI=False` or inherit the `SCPIMixin` class instead.",
+                FutureWarning,
+            )
             includeSCPI = True
         self.SCPI = includeSCPI
         self.isShutdown = False
@@ -115,7 +123,7 @@ class Instrument(CommonBase):
 
     # SCPI default properties
     @property
-    def complete(self):
+    def complete(self) -> str:
         """Get the synchronization bit.
 
         This property allows synchronization between a controller and a device. The Operation
@@ -128,31 +136,31 @@ class Instrument(CommonBase):
             raise NotImplementedError("Non SCPI instruments require implementation in subclasses")
 
     @property
-    def status(self):
-        """ Get the status byte and Master Summary Status bit. """
+    def status(self) -> str:
+        """Get the status byte and Master Summary Status bit."""
         if self.SCPI:
             return self.ask("*STB?").strip()
         else:
             raise NotImplementedError("Non SCPI instruments require implementation in subclasses")
 
     @property
-    def options(self):
-        """ Get the device options installed. """
+    def options(self) -> str:
+        """Get the device options installed."""
         if self.SCPI:
             return self.ask("*OPT?").strip()
         else:
             raise NotImplementedError("Non SCPI instruments require implementation in subclasses")
 
     @property
-    def id(self):
-        """ Get the identification of the instrument. """
+    def id(self) -> str:
+        """Get the identification of the instrument."""
         if self.SCPI:
             return self.ask("*IDN?").strip()
         else:
             raise NotImplementedError("Non SCPI instruments require implementation in subclasses")
 
     @property
-    def next_error(self):
+    def next_error(self) -> tuple[str, str]:
         """Get the next error of the instrument (tuple of code and message)."""
         if self.SCPI:
             return self.values("SYST:ERR?")
@@ -160,7 +168,7 @@ class Instrument(CommonBase):
             raise NotImplementedError("Non SCPI instruments require implementation in subclasses")
 
     # Wrapper functions for the Adapter object
-    def write(self, command: str, **kwargs) -> None:
+    def write(self, command: str, **kwargs: Any) -> None:
         """Write a string command to the instrument appending `write_termination`.
 
         :param command: command string to be sent to the instrument
@@ -168,15 +176,15 @@ class Instrument(CommonBase):
         """
         self.adapter.write(command, **kwargs)
 
-    def write_bytes(self, content: bytes, **kwargs) -> None:
+    def write_bytes(self, content: bytes, **kwargs: Any) -> None:
         """Write the bytes `content` to the instrument."""
         self.adapter.write_bytes(content, **kwargs)
 
-    def read(self, **kwargs) -> str:
+    def read(self, **kwargs: Any) -> str:
         """Read up to (excluding) `read_termination` or the whole read buffer."""
         return self.adapter.read(**kwargs)
 
-    def read_bytes(self, count: int, **kwargs) -> bytes:
+    def read_bytes(self, count: int, **kwargs: Any) -> bytes:
         """Read a certain number of bytes from the instrument.
 
         :param int count: Number of bytes to read. A value of -1 indicates to
@@ -187,7 +195,7 @@ class Instrument(CommonBase):
         return self.adapter.read_bytes(count, **kwargs)
 
     def write_binary_values(
-        self, command: str, values: Sequence[Union[int, float]], *args, **kwargs
+        self, command: str, values: Sequence[Union[int, float]], *args: Any, **kwargs: Any
     ) -> None:
         """Write binary values to the device.
 
@@ -197,7 +205,7 @@ class Instrument(CommonBase):
         """
         self.adapter.write_binary_values(command, values, *args, **kwargs)
 
-    def read_binary_values(self, **kwargs) -> Any:
+    def read_binary_values(self, **kwargs: Any) -> Any:
         """Read binary values from the device."""
         return self.adapter.read_binary_values(**kwargs)
 
@@ -212,15 +220,14 @@ class Instrument(CommonBase):
 
     # SCPI default methods
     def clear(self) -> None:
-        """ Clears the instrument status byte
-        """
+        """Clears the instrument status byte"""
         if self.SCPI:
             self.write("*CLS")
         else:
             raise NotImplementedError("Non SCPI instruments require implementation in subclasses")
 
     def reset(self) -> None:
-        """ Resets the instrument. """
+        """Resets the instrument."""
         if self.SCPI:
             self.write("*RST")
         else:
@@ -229,9 +236,9 @@ class Instrument(CommonBase):
     def shutdown(self) -> None:
         """Brings the instrument to a safe and stable state"""
         self.isShutdown = True
-        log.info(f"Finished shutting down {self.name}")
+        log.info("Finished shutting down %s", self.name)
 
-    def check_errors(self) -> list:
+    def check_errors(self) -> list[tuple[str, str]]:
         """Read all errors from the instrument and log them.
 
         :return: List of error entries.
@@ -241,7 +248,7 @@ class Instrument(CommonBase):
             while True:
                 err = self.next_error
                 if int(err[0]) != 0:
-                    log.error(f"{self.name}: {err[0]}, {err[1]}")
+                    log.error("%s: %s, %s", self.name, err[0], err[1])
                     errors.append(err)
                 else:
                     break
@@ -249,7 +256,7 @@ class Instrument(CommonBase):
         else:
             raise NotImplementedError("Non SCPI instruments require implementation in subclasses")
 
-    def check_get_errors(self) -> list:
+    def check_get_errors(self) -> list[tuple[str, str]]:
         """Check for errors after having gotten a property and log them.
 
         Called if :code:`check_get_errors=True` is set for that property.
@@ -260,7 +267,7 @@ class Instrument(CommonBase):
         """
         return self.check_errors()
 
-    def check_set_errors(self) -> list:
+    def check_set_errors(self) -> list[tuple[str, str]]:
         """Check for errors after having set a property and log them.
 
         Called if :code:`check_set_errors=True` is set for that property.

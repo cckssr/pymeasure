@@ -1,7 +1,7 @@
 #
 # This file is part of the PyMeasure package.
 #
-# Copyright (c) 2013-2025 PyMeasure Developers
+# Copyright (c) 2013-2026 PyMeasure Developers
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,7 @@ import logging
 
 from threading import Thread, Event
 from time import time
+from typing import Optional
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
@@ -38,7 +39,7 @@ class InterruptableEvent(Event):
     wait of an Event to be interrupted by a KeyboardInterrupt.
     """
 
-    def wait(self, timeout=None):
+    def wait(self, timeout: Optional[int] = None) -> Optional[bool]:
         if timeout is None:
             while not super().wait(0.1):
                 pass
@@ -49,7 +50,7 @@ class InterruptableEvent(Event):
 
 
 class StoppableThread(Thread):
-    """ Base class for Threads which require the ability
+    """Base class for Threads which require the ability
     to be stopped by a thread-safe method call
     """
 
@@ -58,8 +59,8 @@ class StoppableThread(Thread):
         self._should_stop = InterruptableEvent()
         self._should_stop.clear()
 
-    def join(self, timeout=0):
-        """ Joins the current thread and forces it to stop after
+    def join(self, timeout: int = 0) -> None:
+        """Joins the current thread and forces it to stop after
         the timeout if necessary
 
         :param timeout: Timeout duration in seconds
@@ -69,12 +70,11 @@ class StoppableThread(Thread):
             self.stop()
         return super().join(0)
 
-    def stop(self):
+    def stop(self) -> None:
         self._should_stop.set()
 
-    def should_stop(self):
+    def should_stop(self) -> bool:
         return self._should_stop.is_set()
 
-    def __repr__(self):
-        return "<{}(should_stop={})>".format(
-            self.__class__.__name__, self.should_stop())
+    def __repr__(self) -> str:
+        return "<{}(should_stop={})>".format(self.__class__.__name__, self.should_stop())

@@ -1,7 +1,7 @@
 #
 # This file is part of the PyMeasure package.
 #
-# Copyright (c) 2013-2025 PyMeasure Developers
+# Copyright (c) 2013-2026 PyMeasure Developers
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,15 +23,16 @@
 #
 
 import logging
-from typing import Optional, Union, Sequence
+from typing import Optional, Union, Sequence, Any, Literal
+from copy import copy
 
 import numpy as np
-from copy import copy
+from numpy.typing import DTypeLike
 from pyvisa.util import to_ieee_block, to_hp_block, to_binary_block, BINARY_DATATYPES
 
 
 class Adapter:
-    """ Base class for Adapter child classes, which adapt between the Instrument
+    """Base class for Adapter child classes, which adapt between the Instrument
     object and the connection, to allow flexible use of different connection
     techniques.
 
@@ -41,7 +42,7 @@ class Adapter:
     :param \\**kwargs: Keyword arguments just to be cooperative.
     """
 
-    def __init__(self, log: Optional[logging.Logger] = None, **kwargs):
+    def __init__(self, log: Optional[logging.Logger] = None, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.connection = None
         if log is None:
@@ -62,7 +63,7 @@ class Adapter:
     # Directly called methods, which ensure proper logging of the communication
     # without the termination characters added by the particular adapters.
     # DO NOT OVERRIDE IN SUBCLASS!
-    def write(self, command: str, **kwargs) -> None:
+    def write(self, command: str, **kwargs: Any) -> None:
         """Write a string command to the instrument appending `write_termination`.
 
         Do not override in a subclass!
@@ -74,7 +75,7 @@ class Adapter:
         self.log.debug("WRITE:%s", command)
         self._write(command, **kwargs)
 
-    def write_bytes(self, content: bytes, **kwargs):
+    def write_bytes(self, content: bytes, **kwargs: Any) -> None:
         """Write the bytes `content` to the instrument.
 
         Do not override in a subclass!
@@ -85,7 +86,7 @@ class Adapter:
         self.log.debug("WRITE:%s", content)
         self._write_bytes(content, **kwargs)
 
-    def read(self, **kwargs) -> str:
+    def read(self, **kwargs: Any) -> str:
         """Read up to (excluding) `read_termination` or the whole read buffer.
 
         Do not override in a subclass!
@@ -97,7 +98,7 @@ class Adapter:
         self.log.debug("READ:%s", read)
         return read
 
-    def read_bytes(self, count: int = -1, break_on_termchar: bool = False, **kwargs) -> bytes:
+    def read_bytes(self, count: int = -1, break_on_termchar: bool = False, **kwargs: Any) -> bytes:
         """Read a certain number of bytes from the instrument.
 
         Do not override in a subclass!
@@ -113,19 +114,19 @@ class Adapter:
         return read
 
     # Methods to implement in the subclasses.
-    def _write(self, command: str, **kwargs) -> None:
+    def _write(self, command: str, **kwargs: Any) -> None:
         """Write string to the instrument. Implement in subclass."""
         raise NotImplementedError("Adapter class has not implemented writing.")
 
-    def _write_bytes(self, content: bytes, **kwargs) -> None:
+    def _write_bytes(self, content: bytes, **kwargs: Any) -> None:
         """Write bytes to the instrument. Implement in subclass."""
         raise NotImplementedError("Adapter class has not implemented writing bytes.")
 
-    def _read(self, **kwargs) -> str:
+    def _read(self, **kwargs: Any) -> str:
         """Read string from the instrument. Implement in subclass."""
         raise NotImplementedError("Adapter class has not implemented reading.")
 
-    def _read_bytes(self, count: int, break_on_termchar: bool, **kwargs) -> bytes:
+    def _read_bytes(self, count: int, break_on_termchar: bool, **kwargs: Any) -> bytes:
         """Read bytes from the instrument. Implement in subclass."""
         raise NotImplementedError("Adapter class has not implemented reading bytes.")
 
@@ -138,11 +139,11 @@ class Adapter:
         self,
         header_bytes: int = 0,
         termination_bytes: Optional[int] = None,
-        dtype=np.float32,
+        dtype: DTypeLike = np.float32,
         sep: str = "",
-        **kwargs,
+        **kwargs: Any,
     ):
-        """ Returns a numpy array from a query for binary data
+        """Returns a numpy array from a query for binary data
 
         :param int header_bytes: Number of bytes to ignore in header.
         :param int termination_bytes: Number of bytes to strip at end of message or None.
@@ -165,7 +166,7 @@ class Adapter:
         values: Sequence[Union[int, float]],
         datatype: BINARY_DATATYPES = "f",
         is_big_endian: bool = False,
-        header_fmt: str = "ieee",
+        header_fmt: Literal["ieee", "hp", "empty"] = "ieee",
     ) -> bytes:
         """Format values in binary format, used internally in :meth:`Adapter.write_binary_values`.
 
@@ -187,9 +188,13 @@ class Adapter:
         return block
 
     def write_binary_values(
-        self, command: str, values: Sequence[Union[int, float]], termination: str = "", **kwargs
+        self,
+        command: str,
+        values: Sequence[Union[int, float]],
+        termination: str = "",
+        **kwargs: Any,
     ) -> int:
-        """ Write binary data to the instrument, e.g. waveform for signal generators
+        """Write binary data to the instrument, e.g. waveform for signal generators
 
         :param command: command string to be sent to the instrument
         :param values: iterable representing the binary values
@@ -222,25 +227,25 @@ class FakeAdapter(Adapter):
 
     _buffer = ""
 
-    def _read(self, **kwargs) -> str:
+    def _read(self, **kwargs: Any) -> str:
         """Return the last commands given after the last read call."""
         result = copy(self._buffer)
         # Reset the buffer
         self._buffer = ""
         return result
 
-    def _read_bytes(self, count: int, break_on_termchar: bool, **kwargs) -> bytes:
+    def _read_bytes(self, count: int, break_on_termchar: bool, **kwargs: Any) -> bytes:
         """Return the last commands given after the last read call."""
         result = copy(self._buffer)
         # Reset the buffer
         self._buffer = ""
         return result[:count].encode()
 
-    def _write(self, command: str, **kwargs) -> None:
+    def _write(self, command: str, **kwargs: Any) -> None:
         """Write the command to a buffer, so that it can be read back."""
         self._buffer += command
 
-    def _write_bytes(self, content: bytes, **kwargs) -> None:
+    def _write_bytes(self, content: bytes, **kwargs: Any) -> None:
         """Write the content to a buffer, so that it can be read back."""
         self._buffer += content.decode()
 

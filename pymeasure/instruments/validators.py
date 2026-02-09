@@ -1,7 +1,7 @@
 #
 # This file is part of the PyMeasure package.
 #
-# Copyright (c) 2013-2025 PyMeasure Developers
+# Copyright (c) 2013-2026 PyMeasure Developers
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,112 +23,132 @@
 #
 
 from decimal import Decimal
+from typing import Any, Callable, Sequence, Union
+
+try:
+    from typing import TypeAlias
+except ImportError:
+    from typing_extensions import TypeAlias  # type: ignore
+
+VALUES_TYPES: TypeAlias = Union[Sequence[float], list[float], range]
 
 
-def strict_range(value, values):
-    """ Provides a validator function that returns the value
+def strict_range(value: float, values: VALUES_TYPES) -> float:
+    """Provides a validator function that returns the value
     if its value is less than or equal to the maximum and
     greater than or equal to the minimum of ``values``.
     Otherwise it raises a ValueError.
 
-    :param value: A value to test
-    :param values: A range of values (range, list, etc.)
+    :param float value: A value to test
+    :param VALUES_TYPES values: A range of values (range, list, etc.)
+
+    :return float: The value if it is in the range
+
     :raises: ValueError if the value is out of the range
     """
     if min(values) <= value <= max(values):
         return value
     else:
-        raise ValueError('Value of {:g} is not in range [{:g},{:g}]'.format(
-            value, min(values), max(values)
-        ))
+        raise ValueError(
+            "Value of {:g} is not in range [{:g},{:g}]".format(value, min(values), max(values))
+        )
 
 
-def strict_discrete_range(value, values, step):
-    """ Provides a validator function that returns the value
+def strict_discrete_range(value: float, values: VALUES_TYPES, step: float) -> float:
+    """Provides a validator function that returns the value
     if its value is less than the maximum and greater than the
     minimum of the range and is a multiple of step.
     Otherwise it raises a ValueError.
 
-    :param value: A value to test
-    :param values: A range of values (range, list, etc.)
-    :param step: Minimum stepsize (resolution limit)
+    :param float value: A value to test
+    :param VALUES_TYPES values: A range of values (range, list, etc.)
+    :param float step: Minimum stepsize (resolution limit)
+
+    :return float: The value if it is in the range and a multiple of step
+
     :raises: ValueError if the value is out of the range
     """
     # use Decimal type to provide correct decimal compatible floating
     # point arithmetic compared to binary floating point arithmetic
-    if (strict_range(value, values) == value and
-            Decimal(str(value)) % Decimal(str(step)) == 0):
+    if strict_range(value, values) == value and Decimal(str(value)) % Decimal(str(step)) == 0:
         return value
     else:
-        raise ValueError('Value of {:g} is not a multiple of {:g}'.format(
-            value, step
-        ))
+        raise ValueError("Value of {:g} is not a multiple of {:g}".format(value, step))
 
 
-def strict_discrete_set(value, values):
-    """ Provides a validator function that returns the value
+def strict_discrete_set(value: float, values: VALUES_TYPES) -> float:
+    """Provides a validator function that returns the value
     if it is in the discrete set. Otherwise it raises a ValueError.
 
-    :param value: A value to test
-    :param values: A set of values that are valid
+    :param float value: A value to test
+    :param VALUES_TYPES values: A set of values that are valid
+
+    :return float: The value if it is in the discrete set
+
     :raises: ValueError if the value is not in the set
     """
     if value in values:
         return value
     else:
-        raise ValueError('Value of {} is not in the discrete set {}'.format(
-            value, values
-        ))
+        raise ValueError("Value of {} is not in the discrete set {}".format(value, values))
 
 
-def truncated_range(value, values):
-    """ Provides a validator function that returns the value
+def truncated_range(value: float, values: VALUES_TYPES) -> float:
+    """Provides a validator function that returns the value
     if it is in the range. Otherwise it returns the closest
     range bound.
 
-    :param value: A value to test
-    :param values: A set of values that are valid
+    :param float value: A value to test
+    :param VALUES_TYPES values: A set of values that are valid
+
+    :return float: The value if it is in the range, otherwise the closest range bound
     """
     if min(values) <= value <= max(values):
         return value
-    elif value > max(values):
+    if value > max(values):
         return max(values)
-    else:
-        return min(values)
+    return min(values)
 
 
-def modular_range(value, values):
-    """ Provides a validator function that returns the value
+def modular_range(value: float, values: VALUES_TYPES) -> float:
+    """Provides a validator function that returns the value
     if it is in the range. Otherwise it returns the value,
     modulo the max of the range.
 
-    :param value: a value to test
-    :param values: A set of values that are valid
+    :param float value: a value to test
+    :param VALUES_TYPES values: A set of values that are valid
+
+    :return float: The value if it is in the range, otherwise the value modulo the max of the range
     """
     return value % max(values)
 
 
-def modular_range_bidirectional(value, values):
-    """ Provides a validator function that returns the value
+def modular_range_bidirectional(value: float, values: VALUES_TYPES) -> float:
+    """Provides a validator function that returns the value
     if it is in the range. Otherwise it returns the value,
     modulo the max of the range. Allows negative values.
 
-    :param value: a value to test
-    :param values: A set of values that are valid
+    :param float value: a value to test
+    :param VALUES_TYPES values: A set of values that are valid
+
+    :return float: The value if it is in the range, otherwise the value modulo the max of the range
     """
     if value > 0:
         return value % max(values)
-    else:
-        return -1 * (abs(value) % max(values))
+
+    return -1 * (abs(value) % max(values))
 
 
-def truncated_discrete_set(value, values):
-    """ Provides a validator function that returns the value
+def truncated_discrete_set(value: float, values: VALUES_TYPES) -> float:
+    """Provides a validator function that returns the value
     if it is in the discrete set. Otherwise, it returns the smallest
     value that is larger than the value.
 
-    :param value: A value to test
-    :param values: A set of values that are valid
+    :param float value: A value to test
+    :param VALUES_TYPES values: A set of values that are valid
+
+    :return float: The value if it is in the discrete set,
+        otherwise the smallest value that is larger than the value
     """
     # Force the values to be sorted
     values = list(values)
@@ -140,7 +160,9 @@ def truncated_discrete_set(value, values):
     return values[-1]
 
 
-def joined_validators(*validators):
+def joined_validators(
+    *validators: Callable[..., Any]
+) -> Callable[[Any, Sequence[VALUES_TYPES]], Any]:
     """Returns a validator function that represents a list of validators joined together.
 
     A value passed to the validator is returned if it passes any validator (not all of them).
@@ -167,7 +189,7 @@ def joined_validators(*validators):
     :param validators: an iterable of other validators
     """
 
-    def validate(value, values):
+    def validate(value: Any, values: Sequence[VALUES_TYPES]) -> Any:
         for validator, vals in zip(validators, values):
             try:
                 return validator(value, vals)
@@ -178,14 +200,19 @@ def joined_validators(*validators):
     return validate
 
 
-def discreteTruncate(number, discreteSet):
-    """ Truncates the number to the closest element in the positive discrete set.
-    Returns False if the number is larger than the maximum value or negative.
+def discreteTruncate(number: float, discrete_set: VALUES_TYPES) -> Union[float, bool]:
+    """Truncates the number to the closest element in the positive discrete set.
+
+    :param float number: The number to truncate.
+    :param VALUES_TYPES discrete_set: A set of values that are valid.
+
+    :return Union[float, bool]: The closest element in the positive discrete set if the
+        number is valid, otherwise False.
     """
     if number < 0:
         return False
-    discreteSet.sort()
-    for item in discreteSet:
+    discrete_set = sorted(discrete_set)
+    for item in discrete_set:
         if number <= item:
             return item
     return False

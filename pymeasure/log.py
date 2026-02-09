@@ -1,7 +1,7 @@
 #
 # This file is part of the PyMeasure package.
 #
-# Copyright (c) 2013-2025 PyMeasure Developers
+# Copyright (c) 2013-2026 PyMeasure Developers
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@ import logging.handlers
 from logging.handlers import QueueHandler
 
 from queue import Queue
+from typing import Optional, Any
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
@@ -40,7 +41,9 @@ class QueueListener(logging.handlers.QueueListener):
             return False
 
 
-def console_log(logger, level=logging.INFO, queue=None):
+def console_log(
+    logger: logging.Logger, level: int = logging.INFO, queue: Optional[Queue[int]] = None
+) -> Scribe:
     """Create a console log handler. Return a scribe thread object."""
     if queue is None:
         queue = Queue()
@@ -48,22 +51,28 @@ def console_log(logger, level=logging.INFO, queue=None):
     ch = logging.StreamHandler()
     ch.setLevel(level)
     formatter = logging.Formatter(
-        fmt='%(asctime)s: %(message)s (%(name)s, %(levelname)s)',
-        datefmt='%I:%M:%S %p')
+        fmt="%(asctime)s: %(message)s (%(name)s, %(levelname)s)", datefmt="%I:%M:%S %p"
+    )
     ch.setFormatter(formatter)
     logger.addHandler(ch)
     scribe = Scribe(queue)
     return scribe
 
 
-def file_log(logger, log_filename, level=logging.INFO, queue=None, **kwargs):
+def file_log(
+    logger: logging.Logger,
+    log_filename: str,
+    level: int = logging.INFO,
+    queue: Optional[Queue[int]] = None,
+    **kwargs: Any,
+) -> Scribe:
     """Create a file log handler. Return a scribe thread object."""
     if queue is None:
         queue = Queue()
     logger.setLevel(level)
     ch = logging.FileHandler(log_filename, **kwargs)
     ch.setLevel(level)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     ch.setFormatter(formatter)
     logger.addHandler(ch)
     scribe = Scribe(queue)
@@ -71,21 +80,28 @@ def file_log(logger, log_filename, level=logging.INFO, queue=None, **kwargs):
 
 
 class Scribe(QueueListener):
-    """ Scribe class which logs records as retrieved from a queue to support consistent
+    """Scribe class which logs records as retrieved from a queue to support consistent
     multi-process logging.
 
     :param queue: The multiprocessing queue which the scriber will listen to.
     """
 
-    def __init__(self, queue):
+    def __init__(self, queue: Queue):
         super().__init__(queue)
 
     def handle(self, record):
         logging.getLogger(record.name).handle(record)
 
 
-def setup_logging(logger=None, console=False, console_level='INFO', filename=None,
-                  file_level='DEBUG', queue=None, file_kwargs=None):
+def setup_logging(
+    logger: Optional[logging.Logger] = None,
+    console: bool = False,
+    console_level: str = "INFO",
+    filename: Optional[str] = None,
+    file_level: str = "DEBUG",
+    queue: Optional[Queue[int]] = None,
+    file_kwargs: Optional[dict[str, Any]] = None,
+):
     """Setup logging for console and/or file logging. Returns a scribe thread object.
     Defaults to no logging."""
     if queue is None:
@@ -98,17 +114,17 @@ def setup_logging(logger=None, console=False, console_level='INFO', filename=Non
     logger.handlers = []
     if console:
         console_log(logger, level=getattr(logging, console_level))
-        logger.info('Set up console logging')
+        logger.info("Set up console logging")
     if filename is not None:
         file_log(logger, filename, level=getattr(logging, file_level), **file_kwargs)
-        logger.info('Set up file logging')
+        logger.info("Set up file logging")
 
     scribe = Scribe(queue)
     return scribe
 
 
 class TopicQueueHandler(QueueHandler):
-    def __init__(self, queue, topic='log'):
+    def __init__(self, queue: Optional[Queue[int]] = None, topic: str = "log"):
         super().__init__(queue)
         self.topic = topic
 

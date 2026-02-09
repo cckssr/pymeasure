@@ -1,7 +1,7 @@
 #
 # This file is part of the PyMeasure package.
 #
-# Copyright (c) 2013-2025 PyMeasure Developers
+# Copyright (c) 2013-2026 PyMeasure Developers
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 
 from __future__ import annotations
 import logging
-from typing import Optional, Sequence, Union
+from typing import Optional, Sequence, Union, Any
 from unittest.mock import MagicMock
 from warnings import warn
 
@@ -33,30 +33,31 @@ from .adapter import Adapter
 log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
 
-BYTABLE = Union[bytes, bytearray, str, list[int], tuple[int, ...], int, float]
+BYTABLE = Union[bytes, bytearray, str, list[int], tuple[int, ...], int, float, None]
 
 
 def to_bytes(
     command: BYTABLE,
 ) -> bytes:
     """Change `command` to a bytes object"""
-    if isinstance(command, bytes):
-        return command
-    elif isinstance(command, bytearray):
-        return bytes(command)
-    elif command is None:
-        return None
-    elif isinstance(command, str):
-        return command.encode("utf-8")
-    elif isinstance(command, (list, tuple)):
-        return bytes(command)
-    elif isinstance(command, (int, float)):
+    try:
+        if isinstance(command, bytes):
+            return command
+        if isinstance(command, bytearray):
+            return bytes(command)
+        if command is None:
+            return b""
+        if isinstance(command, str):
+            return command.encode("utf-8")
+        if isinstance(command, (list, tuple)):
+            return bytes(command)
         return str(command).encode("utf-8")
-    raise TypeError(f"Invalid input of type {type(command).__name__}.")
+    except TypeError as exc:
+        raise TypeError(f"Cannot convert {command} of type {type(command)} to bytes.") from exc
 
 
 class ProtocolAdapter(Adapter):
-    """ Adapter class for testing the command exchange protocol without instrument hardware.
+    """Adapter class for testing the command exchange protocol without instrument hardware.
 
     This adapter is primarily meant for use within :func:`pymeasure.test.expected_protocol()`.
 
@@ -68,31 +69,35 @@ class ProtocolAdapter(Adapter):
     with :code:`assert adapter.connection.some_method.called is True`.
     You can specify dictionaries with return values of attributes and methods.
 
-    :param list comm_pairs: List of "reference" message pair tuples. The first element is
+    :param list[tuple[Union[BYTABLE, None], Union[BYTABLE, None]]] comm_pairs:
+        List of "reference" message pair tuples. The first element is
         what is sent to the instrument, the second one is the returned message.
         'None' indicates that a pair member (write or read) does not exist.
         The messages do **not** include the termination characters.
-    :param connection_attributes: Dictionary of connection attributes and their values.
-    :param connection_methods: Dictionary of method names of the connection and their return values.
+    :param dict[str, Any] connection_attributes: Dictionary of connection attributes
+        and their values.
+    :param dict[str, Any] connection_methods: Dictionary of method names of the connection
+        and their return values.
     """
 
     def __init__(
         self,
         comm_pairs: Optional[Sequence[tuple[Union[BYTABLE, None], Union[BYTABLE, None]]]] = None,
-        connection_attributes: Optional[dict] = None,
-        connection_methods: Optional[dict] = None,
-        **kwargs,
-    ):
+        connection_attributes: Optional[dict[str, Any]] = None,
+        connection_methods: Optional[dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
         """Generate the adapter and initialize internal buffers."""
         super().__init__(**kwargs)
         # Setup communication
         if comm_pairs is None:
             comm_pairs = []
-        assert isinstance(comm_pairs, (list, tuple)), (
-            "Parameter comm_pairs has to be a list or tuple.")
+        assert isinstance(
+            comm_pairs, (list, tuple)
+        ), "Parameter comm_pairs has to be a list or tuple."
         for pair in comm_pairs:
             if len(pair) != 2:
-                raise ValueError(f'Comm_pairs element {pair} does not have two elements!')
+                raise ValueError(f"Comm_pairs element {pair} does not have two elements!")
         self._read_buffer: Optional[bytes] = None
         self._write_buffer: Optional[bytes] = None
         self.comm_pairs = comm_pairs
@@ -101,7 +106,9 @@ class ProtocolAdapter(Adapter):
         self._setup_connection(connection_attributes, connection_methods)
 
     def _setup_connection(
-        self, connection_attributes: Optional[dict], connection_methods: Optional[dict]
+        self,
+        connection_attributes: Optional[dict[str, Any]],
+        connection_methods: Optional[dict[str, Any]],
     ) -> None:
         self.connection = MagicMock()
         if connection_attributes is not None:
@@ -111,14 +118,15 @@ class ProtocolAdapter(Adapter):
             for key, value in connection_methods.items():
                 getattr(self.connection, key).return_value = value
 
-    def _write(self, command: str, **kwargs) -> None:
+    def _write(self, command: str, **kwargs: Any) -> None:
         """Compare the command with the expected one and fill the read."""
         self._write_bytes(to_bytes(command))
         assert self._write_buffer is None, (
             f"Written bytes '{self._write_buffer}' do not match expected "
-            f"'{self.comm_pairs[self._index][0]}'.")
+            f"'{self.comm_pairs[self._index][0]}'."
+        )
 
-    def _write_bytes(self, content: bytes, **kwargs) -> None:
+    def _write_bytes(self, content: bytes, **kwargs: Any) -> None:
         """Write the bytes `content`. If a command is full, fill the read."""
         if self._write_buffer is None:
             self._write_buffer = content
@@ -126,8 +134,8 @@ class ProtocolAdapter(Adapter):
             self._write_buffer += content
         try:
             p_write, p_read = self.comm_pairs[self._index]
-        except IndexError:
-            raise ValueError(f"No communication pair left to write {content}.")
+        except IndexError as exc:
+            raise ValueError(f"No communication pair left to write {content}.") from exc
         if p_write is not None and self._write_buffer == to_bytes(p_write):
             assert self._read_buffer is None, (
                 f"Unread response '{self._read_buffer}' present when writing. "
@@ -144,19 +152,23 @@ class ProtocolAdapter(Adapter):
         # It's not clear how relevant this is in real-world use, but it's analogous
         # to the possibility to fetch a (binary) message over several reads.
 
-    def _read(self, **kwargs) -> str:
+    def _read(self, **kwargs: Any) -> str:
         """Return an already present or freshly fetched read buffer as a string."""
         return self._read_bytes(-1).decode("utf-8")
 
-    def _read_bytes(self, count: int, break_on_termchar: bool = False, **kwargs) -> bytes:
+    def _read_bytes(self, count: int, break_on_termchar: bool = False, **kwargs: Any) -> bytes:
         """Read `count` number of bytes from the buffer.
 
         :param int count: Number of bytes to read. If -1, return the buffer.
         """
         if break_on_termchar:
-            warn(("Breaking on termination character in `read_bytes` cannot be tested. "
-                  "You have to separate the message parts in the com_pairs."),
-                 UserWarning)
+            warn(
+                (
+                    "Breaking on termination character in `read_bytes` cannot be tested. "
+                    "You have to separate the message parts in the com_pairs."
+                ),
+                UserWarning,
+            )
         if self._read_buffer is not None:
             if count == -1 or count >= len(self._read_buffer):
                 read = self._read_buffer
@@ -168,12 +180,13 @@ class ProtocolAdapter(Adapter):
         else:
             try:
                 p_write, p_read = self.comm_pairs[self._index]
-            except IndexError:
-                raise ValueError("No communication pair left for reading.")
+            except IndexError as exc:
+                raise ValueError("No communication pair left for reading.") from exc
             assert p_write is None, (
                 f"Written {self._write_buffer} do not match expected {p_write} prior to read."
                 if self._write_buffer
-                else "Unexpected read without prior write.")
+                else "Unexpected read without prior write."
+            )
             assert p_read is not None, "Communication pair cannot be (None, None)."
             self._index += 1
             p_read = to_bytes(p_read)
@@ -185,7 +198,7 @@ class ProtocolAdapter(Adapter):
                 return p_read[:count]
 
     def flush_read_buffer(self) -> None:
-        """ Flush and discard the input buffer
+        """Flush and discard the input buffer
 
         As detailed by pyvisa, discard the read buffer contents and if data was present
         in the read buffer and no END-indicator was present, read from the device until

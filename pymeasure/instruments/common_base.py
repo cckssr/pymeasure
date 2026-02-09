@@ -1,7 +1,7 @@
 #
 # This file is part of the PyMeasure package.
 #
-# Copyright (c) 2013-2025 PyMeasure Developers
+# Copyright (c) 2013-2026 PyMeasure Developers
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -52,7 +52,7 @@ V2 = TypeVar("V2")
 
 
 class DynamicProperty(property):
-    """ Class that allows managing python property behaviour in a "dynamic" fashion
+    """Class that allows managing python property behaviour in a "dynamic" fashion
 
     The class allows passing, in addition to regular property parameters, a list of
     runtime configurable parameters.
@@ -77,8 +77,16 @@ class DynamicProperty(property):
                    parameters.
     """
 
-    def __init__(self, fget=None, fset=None, fdel=None, doc=None, fget_params_list=None,
-                 fset_params_list=None, prefix=""):
+    def __init__(
+        self,
+        fget=None,
+        fset=None,
+        fdel=None,
+        doc=None,
+        fget_params_list=None,
+        fset_params_list=None,
+        prefix="",
+    ):
         super().__init__(fget, fset, fdel, doc)
         self.fget_params_list = () if fget_params_list is None else fget_params_list
         self.fset_params_list = () if fset_params_list is None else fset_params_list
@@ -122,21 +130,25 @@ class CommonBase:
 
     # Variable holding the list of DynamicProperty parameters that are configurable
     # by users
-    _fget_params_list = ('get_command',
-                         'values',
-                         'map_values',
-                         'get_process',
-                         'get_process_list',
-                         'command_process',
-                         'check_get_errors')
+    _fget_params_list = (
+        "get_command",
+        "values",
+        "map_values",
+        "get_process",
+        "get_process_list",
+        "command_process",
+        "check_get_errors",
+    )
 
-    _fset_params_list = ('set_command',
-                         'validator',
-                         'values',
-                         'map_values',
-                         'set_process',
-                         'command_process',
-                         'check_set_errors')
+    _fset_params_list = (
+        "set_command",
+        "validator",
+        "values",
+        "map_values",
+        "set_process",
+        "command_process",
+        "check_set_errors",
+    )
 
     # Prefix used to store reserved variables
     __reserved_prefix = "___"
@@ -250,7 +262,7 @@ class CommonBase:
         ) -> None:
             super().__init__(**kwargs)
             if isinstance(id, (list, tuple)) and isinstance(cls, (list, tuple)):
-                assert (len(id) == len(cls)), "Lengths of cls and id do not match."
+                assert len(id) == len(cls), "Lengths of cls and id do not match."
                 self.pairs = list(zip(cls, id))
             elif isinstance(id, (list, tuple)) and self.check_for_valid_class(cls):
                 self.pairs = list(zip((cast(type[Child], cls),) * len(id), id))
@@ -259,7 +271,7 @@ class CommonBase:
             self.kwargs.setdefault("prefix", prefix)
 
     def _setup_special_names(self) -> list[str]:
-        """ Return list of class/instance special names.
+        """Return list of class/instance special names.
 
         Compute the list of special names based on the list of
         class attributes that are a DynamicProperty. Check also for class variables
@@ -315,18 +327,18 @@ class CommonBase:
                 child._protected = True
 
     def __setattr__(self, name: str, value: Any) -> None:
-        """ Add reserved_prefix in front of special variables."""
-        if hasattr(self, '_special_names'):
+        """Add reserved_prefix in front of special variables."""
+        if hasattr(self, "_special_names"):
             if name in self._special_names:
                 name = self.__reserved_prefix + name
         super().__setattr__(name, value)
 
     def __getattribute__(self, name: str) -> Any:
-        """ Prevent read access to variables with special names used to
+        """Prevent read access to variables with special names used to
         support dynamic property behaviour."""
-        if name in ('_special_names', '__dict__'):
+        if name in ("_special_names", "__dict__"):
             return super().__getattribute__(name)
-        if hasattr(self, '_special_names'):
+        if hasattr(self, "_special_names"):
             if name in self._special_names:
                 raise AttributeError(f"{name} is a reserved variable name and it cannot be read")
         return super().__getattribute__(name)
@@ -470,7 +482,7 @@ class CommonBase:
         return results
 
     def binary_values(self, command: str, query_delay: Optional[float] = None, **kwargs):
-        """ Write a command to the instrument and return a numpy array of the binary data.
+        """Write a command to the instrument and return a numpy array of the binary data.
 
         :param command: Command to be sent to the instrument.
         :param query_delay: Delay between writing and reading in seconds.
@@ -582,9 +594,11 @@ class CommonBase:
         if values_kwargs is None:
             values_kwargs = {}
         if kwargs:
-            warn(f"Do not use keyword arguments {kwargs} as `control` parameter "
-                 f"for the `values` method, use `values_kwargs` parameter instead. docs:\n{docs}",
-                 FutureWarning)
+            warn(
+                f"Do not use keyword arguments {kwargs} as `control` parameter "
+                f"for the `values` method, use `values_kwargs` parameter instead. docs:\n{docs}",
+                FutureWarning,
+            )
             values_kwargs.update(kwargs)
 
         if command_process is None:
@@ -604,23 +618,29 @@ class CommonBase:
         ) -> Any:
             if get_command is None:
                 raise LookupError("Property can not be read.")
-            vals = self.values(command_process(get_command),
-                               separator=separator,
-                               cast=cast,
-                               preprocess_reply=preprocess_reply,
-                               maxsplit=maxsplit,
-                               **values_kwargs)
+            vals = self.values(
+                command_process(get_command),
+                separator=separator,
+                cast=cast,
+                preprocess_reply=preprocess_reply,
+                maxsplit=maxsplit,
+                **values_kwargs,
+            )
             if check_get_errors:
                 try:
                     error_list = self.check_get_errors()
                 except Exception as exc:
-                    log.error("Exception raised while getting a property with the command "
-                              f"""'{command_process(get_command)}': '{str(exc)}'.""")
+                    log.error(
+                        "Exception raised while getting a property with the command "
+                        f"""'{command_process(get_command)}': '{str(exc)}'."""
+                    )
                     raise
                 errors = [str(error) for error in error_list]
                 if errors:
-                    log.error("Error received after trying to get a property with the command "
-                              f"""'{command_process(get_command)}': '{"', '".join(errors)}'.""")
+                    log.error(
+                        "Error received after trying to get a property with the command "
+                        f"""'{command_process(get_command)}': '{"', '".join(errors)}'."""
+                    )
             if len(vals) == 1:
                 value = get_process(vals[0])
                 if not map_values:
@@ -634,8 +654,8 @@ class CommonBase:
                     raise KeyError(f"Value {value} not found in mapped values")
                 else:
                     raise ValueError(
-                        'Values of type `{}` are not allowed '
-                        'for Instrument.control'.format(type(values))
+                        "Values of type `{}` are not allowed "
+                        "for Instrument.control".format(type(values))
                     )
             else:
                 vals = get_process_list(vals)
@@ -664,16 +684,18 @@ class CommonBase:
                 val = values[val]
             else:
                 raise ValueError(
-                    'Values of type `{}` are not allowed '
-                    'for CommonBase.control'.format(type(values))
+                    "Values of type `{}` are not allowed "
+                    "for CommonBase.control".format(type(values))
                 )
             self.write(command_process(set_command) % val)
             if check_set_errors:
                 try:
                     error_list = self.check_set_errors()
                 except Exception as exc:
-                    log.error("Exception raised while setting a property with the command "
-                              f"""'{command_process(set_command) % val}': '{str(exc)}'.""")
+                    log.error(
+                        "Exception raised while setting a property with the command "
+                        f"""'{command_process(set_command) % val}': '{str(exc)}'."""
+                    )
                     raise
                 errors = [str(error) for error in error_list]
                 if errors:
@@ -687,10 +709,13 @@ class CommonBase:
 
         if dynamic:
             fget.__doc__ += "(dynamic)"
-            return DynamicProperty(fget=fget, fset=fset,
-                                   fget_params_list=CommonBase._fget_params_list,
-                                   fset_params_list=CommonBase._fset_params_list,
-                                   prefix=CommonBase.__reserved_prefix)
+            return DynamicProperty(
+                fget=fget,
+                fset=fset,
+                fget_params_list=CommonBase._fget_params_list,
+                fset_params_list=CommonBase._fset_params_list,
+                prefix=CommonBase.__reserved_prefix,
+            )
         else:
             return property(fget, fset)
 
@@ -712,7 +737,7 @@ class CommonBase:
         values_kwargs: Optional[dict] = None,
         **kwargs,
     ) -> Union[property, DynamicProperty]:
-        """ Return a property for the class based on the supplied
+        """Return a property for the class based on the supplied
         commands. This is a measurement quantity that may only be
         read from the instrument, not set.
 
@@ -751,27 +776,30 @@ class CommonBase:
         if values_kwargs is None:
             values_kwargs = {}
         if kwargs:
-            warn(f"Do not use keyword arguments {kwargs} as `measurement` parameter "
-                 f"for the `values` method, use `values_kwargs` parameter instead. docs:\n{docs}",
-                 FutureWarning)
+            warn(
+                f"Do not use keyword arguments {kwargs} as `measurement` parameter "
+                f"for the `values` method, use `values_kwargs` parameter instead. docs:\n{docs}",
+                FutureWarning,
+            )
             values_kwargs.update(kwargs)
 
-        return CommonBase.control(get_command=get_command,
-                                  set_command=None,
-                                  docs=docs,
-                                  values=values,
-                                  map_values=map_values,
-                                  get_process=get_process,
-                                  get_process_list=get_process_list,
-                                  command_process=command_process,
-                                  check_get_errors=check_get_errors,
-                                  dynamic=dynamic,
-                                  preprocess_reply=preprocess_reply,
-                                  separator=separator,
-                                  maxsplit=maxsplit,
-                                  cast=cast,
-                                  values_kwargs=values_kwargs,
-                                  )
+        return CommonBase.control(
+            get_command=get_command,
+            set_command=None,
+            docs=docs,
+            values=values,
+            map_values=map_values,
+            get_process=get_process,
+            get_process_list=get_process_list,
+            command_process=command_process,
+            check_get_errors=check_get_errors,
+            dynamic=dynamic,
+            preprocess_reply=preprocess_reply,
+            separator=separator,
+            maxsplit=maxsplit,
+            cast=cast,
+            values_kwargs=values_kwargs,
+        )
 
     @staticmethod
     def setting(
@@ -803,16 +831,17 @@ class CommonBase:
             instances or subclasses. See :meth:`control` for an usage example.
         """
 
-        return CommonBase.control(get_command=None,
-                                  set_command=set_command,
-                                  docs=docs,
-                                  validator=validator,
-                                  values=values,
-                                  map_values=map_values,
-                                  set_process=set_process,
-                                  check_set_errors=check_set_errors,
-                                  dynamic=dynamic,
-                                  )
+        return CommonBase.control(
+            get_command=None,
+            set_command=set_command,
+            docs=docs,
+            validator=validator,
+            values=values,
+            map_values=map_values,
+            set_process=set_process,
+            check_set_errors=check_set_errors,
+            dynamic=dynamic,
+        )
 
     def check_errors(self) -> list:
         """Read all errors from the instrument and log them.

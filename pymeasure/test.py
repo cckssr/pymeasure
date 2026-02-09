@@ -1,7 +1,7 @@
 #
 # This file is part of the PyMeasure package.
 #
-# Copyright (c) 2013-2025 PyMeasure Developers
+# Copyright (c) 2013-2026 PyMeasure Developers
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,7 @@ def expected_protocol(
     comm_pairs: Sequence[tuple[Union[BYTABLE, None], Union[BYTABLE, None]]],
     connection_attributes: Optional[dict[str, Any]] = None,
     connection_methods: Optional[dict[str, Any]] = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> Generator[Inst, Any, None]:
     """Context manager that checks sent/received instrument commands without a
     device connected.
@@ -65,14 +65,19 @@ def expected_protocol(
     :param \\**kwargs:
         Keyword arguments for the instantiation of the instrument.
     """
-    protocol = ProtocolAdapter(comm_pairs, connection_attributes=connection_attributes,
-                               connection_methods=connection_methods)
+    protocol = ProtocolAdapter(
+        comm_pairs,
+        connection_attributes=connection_attributes,
+        connection_methods=connection_methods,
+    )
     instr = instrument_cls(protocol, **kwargs)
     yield instr
     assert protocol._index == len(comm_pairs), (
-        "Unprocessed protocol definitions remain: "
-        f"{comm_pairs[protocol._index:]}.")
-    assert protocol._write_buffer is None, (
-        f"Non-empty write buffer remains: '{protocol._write_buffer}'.")
-    assert protocol._read_buffer is None, (
-        f"Non-empty read buffer remains: '{protocol._read_buffer}'.")
+        "Unprocessed protocol definitions remain: " f"{comm_pairs[protocol._index:]}."
+    )
+    assert (
+        protocol._write_buffer is None
+    ), f"Non-empty write buffer remains: '{protocol._write_buffer}'."
+    assert (
+        protocol._read_buffer is None
+    ), f"Non-empty read buffer remains: '{protocol._read_buffer}'."

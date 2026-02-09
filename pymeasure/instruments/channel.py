@@ -1,7 +1,7 @@
 #
 # This file is part of the PyMeasure package.
 #
-# Copyright (c) 2013-2025 PyMeasure Developers
+# Copyright (c) 2013-2026 PyMeasure Developers
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@
 #
 
 import logging
-from typing import Optional, Sequence, Union
+from typing import Optional, Sequence, Union, Any
 
 from .common_base import CommonBase, IdType
 
@@ -48,7 +48,7 @@ class Channel(CommonBase):
 
     placeholder = "ch"
 
-    def __init__(self, parent: CommonBase, id: IdType, **kwargs):
+    def __init__(self, parent: CommonBase, id: IdType, **kwargs: Any) -> None:
         self.parent = parent
         self.id = id
         super().__init__(**kwargs)
@@ -62,7 +62,7 @@ class Channel(CommonBase):
         return command.format_map({self.placeholder: self.id})
 
     # Calls to the instrument
-    def write(self, command: str, **kwargs) -> None:
+    def write(self, command: str, **kwargs: Any) -> None:
         """Write a string command to the instrument appending `write_termination`.
 
         :param command: command string to be sent to the instrument.
@@ -71,15 +71,15 @@ class Channel(CommonBase):
         """
         self.parent.write(self.insert_id(command), **kwargs)
 
-    def write_bytes(self, content: bytes, **kwargs) -> None:
+    def write_bytes(self, content: bytes, **kwargs: Any) -> None:
         """Write the bytes `content` to the instrument."""
         self.parent.write_bytes(content, **kwargs)
 
-    def read(self, **kwargs) -> str:
+    def read(self, **kwargs: Any) -> str:
         """Read up to (excluding) `read_termination` or the whole read buffer."""
         return self.parent.read(**kwargs)
 
-    def read_bytes(self, count: int, **kwargs) -> bytes:
+    def read_bytes(self, count: int, **kwargs: Any) -> bytes:
         """Read a certain number of bytes from the instrument.
 
         :param int count: Number of bytes to read. A value of -1 indicates to
@@ -90,18 +90,17 @@ class Channel(CommonBase):
         return self.parent.read_bytes(count, **kwargs)
 
     def write_binary_values(
-        self, command: str, values: Sequence[Union[int, float]], *args, **kwargs
-    ):
+        self, command: str, values: Sequence[Union[int, float]], *args: Any, **kwargs: Any
+    ) -> None:
         """Write binary values to the instrument.
 
         :param command: Command to send.
         :param values: The values to transmit.
         :param \\*args, \\**kwargs: Further arguments to hand to the Adapter.
         """
-        self.parent.write_binary_values(self.insert_id(command),
-                                        values, *args, **kwargs)
+        self.parent.write_binary_values(self.insert_id(command), values, *args, **kwargs)
 
-    def read_binary_values(self, **kwargs):
+    def read_binary_values(self, **kwargs: Any) -> Any:
         """Read binary values from the instrument."""
         return self.parent.read_binary_values(**kwargs)
 

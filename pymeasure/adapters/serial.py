@@ -1,7 +1,7 @@
 #
 # This file is part of the PyMeasure package.
 #
-# Copyright (c) 2013-2025 PyMeasure Developers
+# Copyright (c) 2013-2026 PyMeasure Developers
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@
 #
 
 import logging
+from typing import Optional, Union, Any, Literal
 
 import serial
 from .adapter import Adapter
@@ -32,16 +33,24 @@ log.addHandler(logging.NullHandler())
 
 
 class SerialAdapter(Adapter):
-    """ Adapter class for using the Python Serial package to allow
+    """Adapter class for using the Python Serial package to allow
     serial communication to instrument
 
-    :param port: Serial port
-    :param write_termination: String appended to messages before writing them.
-    :param read_termination: String expected at end of read message and removed.
+    :param Optional[Union[str, serial.SerialBase]] port: Serial port
+    :param Literal["\r\n", "\r", "\n", ""] write_termination:
+        String appended to messages before writing them.
+    :param Literal["\r\n", "\r", "\n", ""] read_termination:
+        String expected at end of read message and removed.
     :param \\**kwargs: Any valid key-word argument for serial.Serial
     """
 
-    def __init__(self, port, write_termination="", read_termination="", **kwargs):
+    def __init__(
+        self,
+        port: Optional[Union[str, serial.SerialBase]],
+        write_termination: Literal["\r\n", "\r", "\n", ""] = "",
+        read_termination: Literal["\r\n", "\r", "\n", ""] = "",
+        **kwargs: Any,
+    ) -> None:
         super().__init__()
         if isinstance(port, serial.SerialBase):
             self.connection = port
@@ -50,7 +59,7 @@ class SerialAdapter(Adapter):
         self.write_termination = write_termination
         self.read_termination = read_termination
 
-    def _write(self, command, **kwargs):
+    def _write(self, command: str, **kwargs: Any) -> None:
         """Write a string command to the instrument appending `write_termination`.
 
         :param str command: Command string to be sent to the instrument
@@ -60,7 +69,7 @@ class SerialAdapter(Adapter):
         command += self.write_termination
         self._write_bytes(command.encode(), **kwargs)
 
-    def _write_bytes(self, content, **kwargs):
+    def _write_bytes(self, content: bytes, **kwargs: Any) -> None:
         """Write the bytes `content` to the instrument.
 
         :param bytes content: The bytes to write to the instrument.
@@ -68,38 +77,40 @@ class SerialAdapter(Adapter):
         """
         self.connection.write(content, **kwargs)
 
-    def _read(self, **kwargs):
+    def _read(self, **kwargs: Any) -> str:
         """Read up to (excluding) `read_termination` or the whole read buffer.
 
         :param \\**kwargs: Keyword arguments for the connection itself.
+
         :returns str: ASCII response of the instrument (read_termination is removed first).
         """
         read = self._read_bytes(-1, break_on_termchar=True, **kwargs).decode()
         return read.removesuffix(self.read_termination) if self.read_termination else read
 
-    def _read_bytes(self, count, break_on_termchar, **kwargs):
+    def _read_bytes(self, count: int, break_on_termchar: bool, **kwargs: Any) -> bytes:
         """Read a certain number of bytes from the instrument.
 
         :param int count: Number of bytes to read. A value of -1 indicates to
             read from the whole read buffer (waits for timeout).
         :param bool break_on_termchar: Stop reading at a termination character.
         :param \\**kwargs: Keyword arguments for the connection itself.
+
         :returns bytes: Bytes response of the instrument (including termination).
         """
         if break_on_termchar and self.read_termination:
-            return self.connection.read_until(self.read_termination.encode(),
-                                              count if count > 0 else None,
-                                              **kwargs)
-        elif count >= 0:
+            return self.connection.read_until(
+                self.read_termination.encode(), count if count > 0 else None, **kwargs
+            )
+        if count >= 0:
             return self.connection.read(count, **kwargs)
-        else:
-            # For -1 we empty the buffer completely
-            return self._read_bytes_until_timeout()
 
-    def _read_bytes_until_timeout(self, chunk_size=256, **kwargs):
+        # For -1 we empty the buffer completely
+        return self._read_bytes_until_timeout()
+
+    def _read_bytes_until_timeout(self, chunk_size: int = 256, **kwargs: Any) -> bytes:
         """Read from the serial until a timeout occurs, regardless of the number of bytes.
 
-        :chunk_size: The number of bytes attempted to in a single transaction.
+        :param int chunk_size: The number of bytes attempted to in a single transaction.
             Multiple of these transactions will occur.
         """
         # `Serial.readlines()` has an unpredictable timeout, see PR #866
@@ -110,9 +121,10 @@ class SerialAdapter(Adapter):
             if len(chunk) < chunk_size:  # If fewer bytes got returned, we had a timeout
                 return data
 
-    def flush_read_buffer(self):
+    def flush_read_buffer(self) -> None:
         """Flush and discard the input buffer."""
-        self.connection.reset_input_buffer()
+        if isinstance(self.connection, serial.Serial):
+            self.connection.reset_input_buffer()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<SerialAdapter(port='%s')>" % self.connection.port

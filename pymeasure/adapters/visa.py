@@ -1,7 +1,7 @@
 #
 # This file is part of the PyMeasure package.
 #
-# Copyright (c) 2013-2025 PyMeasure Developers
+# Copyright (c) 2013-2026 PyMeasure Developers
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,11 @@
 #
 
 import logging
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import pyvisa
+from pyvisa import constants as pyvisa_constants
+from pyvisa.highlevel import VisaLibraryBase
 
 from .adapter import Adapter
 from .protocol import ProtocolAdapter
@@ -36,16 +38,17 @@ log.addHandler(logging.NullHandler())
 
 # noinspection PyPep8Naming,PyUnresolvedReferences
 class VISAAdapter(Adapter):
-    """ Adapter class for the VISA library, using PyVISA to communicate with instruments.
+    """Adapter class for the VISA library, using PyVISA to communicate with instruments.
 
     The workhorse of our library, used by most instruments.
 
-    :param resource_name: A
-        `VISA resource string <https://pyvisa.readthedocs.io/en/latest/introduction/names.html>`__
+    :param Union[ProtocolAdapter, "VISAAdapter", int, str] resource_name:
+        A `VISA resource string <https://pyvisa.readthedocs.io/en/latest/introduction/names.html>`__
         or GPIB address integer that identifies the target of the connection
-    :param visa_library: PyVISA VisaLibrary Instance, path of the VISA library or VisaLibrary spec
+    :param Union[str, VisaLibraryBase] visa_library:
+        PyVISA VisaLibrary Instance, path of the VISA library or VisaLibrary spec
         string (``@py`` or ``@ivi``). If not given, the default for the platform will be used.
-    :param log: Parent logger of the 'Adapter' logger.
+    :param Optional[logging.Logger] log: Parent logger of the 'Adapter' logger.
     :param \\**kwargs: Keyword arguments for configuring the PyVISA connection.
 
     :Kwargs:
@@ -74,20 +77,20 @@ class VISAAdapter(Adapter):
     def __init__(
         self,
         resource_name: Union[ProtocolAdapter, "VISAAdapter", int, str],
-        visa_library: str = "",
+        visa_library: Union[str, VisaLibraryBase] = "",
         log: Optional[logging.Logger] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         super().__init__(log=log)
         if isinstance(resource_name, ProtocolAdapter):
-            self.connection = resource_name
+            self.connection: Any = resource_name.connection
             self.connection.write_raw = self.connection.write_bytes
-            self.read_bytes = self.connection.read_bytes
+            self.read_bytes = resource_name.read_bytes
             return
         elif isinstance(resource_name, VISAAdapter):
             # Allow to reuse the connection.
             self.resource_name = getattr(resource_name, "resource_name", None)
-            self.connection = resource_name.connection
+            self.connection: Any = resource_name.connection
             self.manager = resource_name.manager
             return
         elif isinstance(resource_name, int):
@@ -100,8 +103,8 @@ class VISAAdapter(Adapter):
         if_type = self.manager.resource_info(self.resource_name).interface_type
         for key in list(kwargs.keys()):  # iterate over a copy of the keys as we modify kwargs
             # Remove all interface-specific kwargs:
-            if key in pyvisa.constants.InterfaceType.__members__:
-                if getattr(pyvisa.constants.InterfaceType, key) is if_type:
+            if key in pyvisa_constants.InterfaceType.__members__:
+                if getattr(pyvisa_constants.InterfaceType, key) is if_type:
                     # For the present interface, dump contents into kwargs first if they are not
                     # present already. This way, it is possible to override default values with
                     # kwargs passed to Instrument.__init__()
@@ -109,10 +112,7 @@ class VISAAdapter(Adapter):
                         kwargs.setdefault(k, v)
                 del kwargs[key]
 
-        self.connection = self.manager.open_resource(
-            resource_name,
-            **kwargs
-        )
+        self.connection: Any = self.manager.open_resource(resource_name, **kwargs)
 
     def close(self) -> None:
         """Close the connection.
@@ -132,16 +132,15 @@ class VISAAdapter(Adapter):
             # AttributeError can occur during __del__ calling close
             pass
 
-    def _write(self, command: str, **kwargs) -> None:
+    def _write(self, command: str, **kwargs: Any) -> None:
         """Write a string command to the instrument appending `write_termination`.
 
-        :param str command: Command string to be sent to the instrument
-            (without termination).
+        :param str command: Command string to be sent to the instrument (without termination).
         :param \\**kwargs: Keyword arguments for the connection itself.
         """
         self.connection.write(command, **kwargs)
 
-    def _write_bytes(self, content: bytes, **kwargs) -> None:
+    def _write_bytes(self, content: bytes, **kwargs: Any) -> None:
         """Write the bytes `content` to the instrument.
 
         :param bytes content: The bytes to write to the instrument.
@@ -149,15 +148,16 @@ class VISAAdapter(Adapter):
         """
         self.connection.write_raw(content, **kwargs)
 
-    def _read(self, **kwargs) -> str:
+    def _read(self, **kwargs: Any) -> str:
         """Read up to (excluding) `read_termination` or the whole read buffer.
 
         :param \\**kwargs: Keyword arguments for the connection itself.
+
         :returns str: ASCII response of the instrument (excluding read_termination).
         """
         return self.connection.read(**kwargs)
 
-    def _read_bytes(self, count: int, break_on_termchar: bool = False, **kwargs) -> bytes:
+    def _read_bytes(self, count: int, break_on_termchar: bool = False, **kwargs: Any) -> bytes:
         """Read a certain number of bytes from the instrument.
 
         :param int count: Number of bytes to read. A value of -1 indicates to
@@ -179,28 +179,28 @@ class VISAAdapter(Adapter):
                 try:
                     result.extend(self.connection.read_bytes(1))
                 except pyvisa.errors.VisaIOError as exc:
-                    if exc.error_code == pyvisa.constants.StatusCode.error_timeout:
+                    if exc.error_code == pyvisa_constants.StatusCode.error_timeout:
                         return bytes(result)
                     raise
 
     def wait_for_srq(self, timeout: int = 25, delay: float = 0.1) -> None:
-        """ Block until a SRQ, and leave the bit high
+        """Block until a SRQ, and leave the bit high
 
-        :param timeout: Timeout duration in milliseconds
-        :param delay: Time delay between checking SRQ in seconds
+        :param int timeout: Timeout duration in milliseconds
+        :param float delay: Time delay between checking SRQ in seconds
         """
         self.connection.wait_for_srq(timeout * 1000)
 
     def flush_read_buffer(self) -> None:
-        """ Flush and discard the input buffer
+        """Flush and discard the input buffer
 
         As detailed by pyvisa, discard the read and receivee buffer contents
         and if data was present in the read buffer and no END-indicator was present,
         read from the device until encountering an END indicator (which causes loss of data).
         """
         try:
-            self.connection.flush(pyvisa.constants.BufferOperation.discard_read_buffer)
-            self.connection.flush(pyvisa.constants.BufferOperation.discard_receive_buffer)
+            self.connection.flush(pyvisa_constants.BufferOperation.discard_read_buffer)
+            self.connection.flush(pyvisa_constants.BufferOperation.discard_receive_buffer)
         except NotImplementedError:
             # NotImplementedError is raised when using resource types other than `asrl`
             # in conjunction with pyvisa-py.

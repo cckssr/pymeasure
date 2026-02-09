@@ -1,7 +1,7 @@
 #
 # This file is part of the PyMeasure package.
 #
-# Copyright (c) 2013-2025 PyMeasure Developers
+# Copyright (c) 2013-2026 PyMeasure Developers
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,7 @@ context = get_context()
 
 
 class StoppableProcess(context.Process):
-    """ Base class for Processes which require the ability
+    """Base class for Processes which require the ability
     to be stopped by a process-safe method call
     """
 
@@ -44,23 +44,22 @@ class StoppableProcess(context.Process):
         self._should_stop = context.Event()
         self._should_stop.clear()
 
-    def join(self, timeout=0):
-        """ Joins the current process and forces it to stop after
+    def join(self, timeout: int = 0) -> None:
+        """Joins the current process and forces it to stop after
         the timeout if necessary
 
-        :param timeout: Timeout duration in seconds
+        :param int timeout: Timeout duration in seconds
         """
         self._should_stop.wait(timeout)
         if not self.should_stop():
             self.stop()
         return super().join(0)
 
-    def stop(self):
+    def stop(self) -> None:
         self._should_stop.set()
 
-    def should_stop(self):
+    def should_stop(self) -> bool:
         return self._should_stop.is_set()
 
-    def __repr__(self):
-        return "<{}(should_stop={})>".format(
-            self.__class__.__name__, self.should_stop())
+    def __repr__(self) -> str:
+        return "<{}(should_stop={})>".format(self.__class__.__name__, self.should_stop())
