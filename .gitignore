@@ -106,7 +106,9 @@ ENV/
 
 
 # VSCode
-settings.json
+.vscode/
+!.vscode/pymeasure.code-workspace
+!.vscode/tasks.json
 
 # Vim
 *.swp
