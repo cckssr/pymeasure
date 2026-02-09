@@ -37,9 +37,9 @@ class SerialAdapter(Adapter):
     serial communication to instrument
 
     :param Optional[Union[str, serial.SerialBase]] port: Serial port
-    :param Literal["\r\n", "\r", "\n", ""] write_termination:
+    :param Literal["\\r\\n", "\\r", "\\n", ""] write_termination:
         String appended to messages before writing them.
-    :param Literal["\r\n", "\r", "\n", ""] read_termination:
+    :param Literal["\\r\\n", "\\r", "\\n", ""] read_termination:
         String expected at end of read message and removed.
     :param \\**kwargs: Any valid key-word argument for serial.Serial
     """

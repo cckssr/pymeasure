@@ -38,7 +38,7 @@ class Adapter:
 
     This class should only be inherited from.
 
-    :param log: Parent logger of the 'Adapter' logger.
+    :param Logger | None log: Parent logger of the 'Adapter' logger.
     :param \\**kwargs: Keyword arguments just to be cooperative.
     """
 

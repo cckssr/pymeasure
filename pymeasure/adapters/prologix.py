@@ -46,7 +46,7 @@ class PrologixAdapter(VISAAdapter):
     :param int address: Integer GPIB address of the desired instrument.
     :param bool auto: Enable or disable read-after-write and address instrument to listen.
     :param bool eoi: Enable or disable EOI assertion.
-    :param Literal["\r\n", "\r", "\n", ""] eos: Set command termination string
+    :param Literal["\\r\\n", "\\r", "\\n", ""] eos: Set command termination string
         (CR+LF, CR, LF, or "")
     :param Optional[int] gpib_read_timeout: Set read timeout for GPIB communication in milliseconds
         Allowed range is 1 to 3000 ms.
