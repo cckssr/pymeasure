@@ -39,7 +39,7 @@ class Adapter:
     This class should only be inherited from.
 
     :param Logger | None log: Parent logger of the 'Adapter' logger.
-    :param \\**kwargs: Keyword arguments just to be cooperative.
+    :param Any \\**kwargs: Keyword arguments just to be cooperative.
     """
 
     def __init__(self, log: Optional[logging.Logger] = None, **kwargs: Any) -> None:
@@ -149,8 +149,10 @@ class Adapter:
         :param int termination_bytes: Number of bytes to strip at end of message or None.
         :param dtype: The NumPy data type to format the values with.
         :param string sep: Separator between chars. If given, use fromstring, otherwise frombytes.
-        :param \\**kwargs: Further arguments for the NumPy fromstring / frombytes method.
-        :returns: NumPy array of values
+        :param Any \\**kwargs: Further arguments for the NumPy fromstring / frombytes method.
+
+        :returns np.ndarray: NumPy array of values
+
         :raises ValueError: if the data buffer is empty or malformed
         """
         binary = self.read_bytes(-1)
@@ -199,8 +201,9 @@ class Adapter:
         :param command: command string to be sent to the instrument
         :param values: iterable representing the binary values
         :param termination: String added afterwards to terminate the message.
-        :param \\**kwargs: Key-word arguments to pass onto :meth:`Adapter._format_binary_values`
-        :returns: number of bytes written
+        :param Any \\**kwargs: Key-word arguments to pass onto :meth:`Adapter._format_binary_values`
+
+        :returns int: number of bytes written
         """
         block = self._format_binary_values(values, **kwargs)
         message = command.encode() + block + termination.encode()
