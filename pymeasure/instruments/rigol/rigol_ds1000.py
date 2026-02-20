@@ -255,6 +255,14 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
         """Force a trigger event."""
         self.write(":TFORce")
 
+    # ##################
+    # IEEE488.2 commands
+    # ##################
+
+    def clear_registers(self):
+        """Clear the status registers of the oscilloscope."""
+        self.write("*CLS")
+
     # #################
     # Acquire Subsystem
     # #################
@@ -355,12 +363,12 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
     timebase_scale = Instrument.control(
         get_command=":TIMebase:MAIN:SCALe?",
-        set_command=":TIMebase:MAIN:SCALe %f",
+        set_command=":TIMebase:MAIN:SCALe %e",
         docs="""Control the timebase scale in seconds per division (float).
 
         Valid values range from 5 ns/div (5e-9) to 50 s/div (50), with 1-2-5 sequence steps.
         The command affects the horizontal display range.""",
-        validator=truncated_discrete_set,
+        validator=strict_discrete_set,
         values=[
             5e-9,
             10e-9,
@@ -435,12 +443,12 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
     timebase_delay_scale = Instrument.control(
         get_command=":TIMebase:DELay:SCALe?",
-        set_command=":TIMebase:DELay:SCALe %f",
+        set_command=":TIMebase:DELay:SCALe %e",
         docs="""Control the delayed timebase scale in seconds per division (float).
 
         Valid values range from 5 ns/div (5e-9) to main timebase scale. The delayed timebase scale
         must be less than or equal to the main timebase scale.""",
-        validator=truncated_discrete_set,
+        validator=strict_discrete_set,
         values=[
             5e-9,
             10e-9,
@@ -484,7 +492,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
         Valid values are:
         - EDGE: Edge trigger
-        - PULSE: Pulse width trigger
+        - PULS: Pulse width trigger
         - RUNT: Runt pulse trigger
         - WINDOWS: Windows trigger
         - NEDGE: Nth edge trigger
@@ -501,7 +509,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
         validator=strict_discrete_set,
         values=[
             "EDGE",
-            "PULSE",
+            "PULS",
             "RUNT",
             "WIND",
             "NEDG",

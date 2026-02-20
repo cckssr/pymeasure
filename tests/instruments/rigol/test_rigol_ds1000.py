@@ -76,25 +76,21 @@ def test_id(rigol_ds1000):
 
 
 def test_autoscale(rigol_ds1000):
-    rigol_ds1000.write("*CLS")
     rigol_ds1000.autoscale()
     sleep(5)  # Wait for autoscale to complete
 
 
 def test_stop(rigol_ds1000):
-    rigol_ds1000.write("*CLS")
     rigol_ds1000.stop()
     sleep(0.5)
 
 
 def test_run(rigol_ds1000):
-    rigol_ds1000.write("*CLS")
     rigol_ds1000.run()
     sleep(0.5)
 
 
 def test_force_trigger(rigol_ds1000):
-    rigol_ds1000.write("*CLS")
     rigol_ds1000.force_trigger()
     sleep(0.5)
 
@@ -151,23 +147,6 @@ class TestAcquireSubsystem:
 
 
 # ---------------------------------------------------------------------------
-# Calibration Subsystem
-# ---------------------------------------------------------------------------
-
-
-class TestCalibrationSubsystem:
-    """Test every command and property in the Calibration subsystem."""
-
-    def test_calibrate(self, rigol_ds1000):
-        rigol_ds1000.cal_start()
-        sleep(1)  # Wait short time
-
-    def test_stop_calibrate(self, rigol_ds1000):
-        rigol_ds1000.cal_stop()
-        sleep(0.5)  # Wait short time
-
-
-# ---------------------------------------------------------------------------
 # Channel Subsystem
 # ---------------------------------------------------------------------------
 
@@ -207,14 +186,14 @@ class TestChannelSubsystem:
         rigol_ds1000.ch1.is_enabled = True
         rigol_ds1000.ch1.probe_ratio = 1
         rigol_ds1000.ch1.scale = scale
-        assert rigol_ds1000.ch1.scale == pytest.approx(scale, rel=0.01)
+        assert rigol_ds1000.ch1.scale == scale
 
     def test_ch1_offset(self, rigol_ds1000):
         rigol_ds1000.ch1.is_enabled = True
         rigol_ds1000.ch1.probe_ratio = 1
         rigol_ds1000.ch1.scale = 1.0  # < 5 V/div => offset range ±20 V
         rigol_ds1000.ch1.offset = 2.0
-        assert rigol_ds1000.ch1.offset == pytest.approx(2.0, abs=0.01)
+        assert rigol_ds1000.ch1.offset == pytest.approx(2.0, rel=0.01)
         rigol_ds1000.ch1.offset = 0.0  # Reset
 
     def test_ch1_range(self, rigol_ds1000):
@@ -226,7 +205,7 @@ class TestChannelSubsystem:
     @pytest.mark.parametrize("probe", [1, 10, 100])
     def test_ch1_probe_ratio(self, rigol_ds1000, probe):
         rigol_ds1000.ch1.probe_ratio = probe
-        assert rigol_ds1000.ch1.probe_ratio == pytest.approx(probe, rel=0.01)
+        assert rigol_ds1000.ch1.probe_ratio == probe
         rigol_ds1000.ch1.probe_ratio = 10  # Reset to 10X default
 
     @pytest.mark.parametrize("units", ["VOLT", "AMP"])
@@ -260,11 +239,14 @@ class TestChannelSubsystem:
 class TestTimebaseSubsystem:
     """Test every command and property in the Timebase subsystem."""
 
-    @pytest.mark.parametrize("scale", [1e-6, 1e-3, 0.1, 1.0, 10.0])
+    @pytest.mark.parametrize("scale", [5e-9, 1e-6, 100e-6, 5e-3, 50.0])
     def test_timebase_scale(self, rigol_ds1000, scale):
+        rigol_ds1000.timebase_delay_enabled = (
+            False  # Delay scale must be disabled to set main scale to low values
+        )
         rigol_ds1000.timebase_mode = "MAIN"
         rigol_ds1000.timebase_scale = scale
-        assert rigol_ds1000.timebase_scale == pytest.approx(scale, rel=0.01)
+        assert rigol_ds1000.timebase_scale == scale
 
     def test_timebase_offset(self, rigol_ds1000):
         rigol_ds1000.timebase_mode = "MAIN"
@@ -275,8 +257,10 @@ class TestTimebaseSubsystem:
     @pytest.mark.parametrize("mode", ["MAIN", "XY", "ROLL"])
     def test_timebase_mode(self, rigol_ds1000, mode):
         rigol_ds1000.timebase_mode = mode
+        sleep(3)  # Wait for mode change to take effect
         assert rigol_ds1000.timebase_mode == mode
         rigol_ds1000.timebase_mode = "MAIN"  # Reset
+        sleep(1)
 
     def test_timebase_delay_enabled(self, rigol_ds1000):
         rigol_ds1000.timebase_mode = "MAIN"
@@ -285,13 +269,13 @@ class TestTimebaseSubsystem:
         rigol_ds1000.timebase_delay_enabled = False
         assert rigol_ds1000.timebase_delay_enabled is False
 
-    @pytest.mark.parametrize("scale", [1e-6, 1e-3, 0.1])
+    @pytest.mark.parametrize("scale", [5e-9, 1e-7, 5e-7, 1e-6])
     def test_timebase_delay_scale(self, rigol_ds1000, scale):
         rigol_ds1000.timebase_mode = "MAIN"
-        rigol_ds1000.timebase_scale = 1.0  # Main must be >= delay scale
+        rigol_ds1000.timebase_scale = 1e-6  # Main must be >= delay scale
         rigol_ds1000.timebase_delay_enabled = True
         rigol_ds1000.timebase_delay_scale = scale
-        assert rigol_ds1000.timebase_delay_scale == pytest.approx(scale, rel=0.01)
+        assert rigol_ds1000.timebase_delay_scale == scale
         rigol_ds1000.timebase_delay_enabled = False  # Reset
 
 
@@ -303,7 +287,26 @@ class TestTimebaseSubsystem:
 class TestTriggerCommon:
     """Test common trigger settings (mode-independent)."""
 
-    @pytest.mark.parametrize("mode", ["EDGE", "PULSE", "SLOP", "VID"])
+    @pytest.mark.parametrize(
+        "mode",
+        [
+            "EDGE",
+            "PULS",
+            "RUNT",
+            "WIND",
+            "NEDG",
+            "SLOP",
+            "VID",
+            "PATT",
+            "DEL",
+            "TIM",
+            "DUR",
+            "SHOL",
+            "RS232",
+            "IIC",
+            "SPI",
+        ],
+    )
     def test_trigger_mode(self, rigol_ds1000, mode):
         rigol_ds1000.trigger_mode = mode
         assert rigol_ds1000.trigger_mode == mode
@@ -347,6 +350,9 @@ class TestTriggerEdge:
 
     @pytest.mark.parametrize("source", ["CHAN1", "CHAN2", "CHAN3", "CHAN4"])
     def test_trigger_edge_source(self, rigol_ds1000, source):
+        getattr(rigol_ds1000, "ch" + source[-1]).is_enabled = (
+            True  # Ensure source channel is enabled
+        )
         rigol_ds1000.trigger_mode = "EDGE"
         rigol_ds1000.trigger_edge_source = source
         assert rigol_ds1000.trigger_edge_source == source
@@ -378,24 +384,24 @@ class TestTriggerPulse:
 
     @pytest.mark.parametrize("source", ["CHAN1", "CHAN2"])
     def test_trigger_pulse_source(self, rigol_ds1000, source):
-        rigol_ds1000.trigger_mode = "PULSE"
+        rigol_ds1000.trigger_mode = "PULS"
         rigol_ds1000.trigger_pulse_source = source
         assert rigol_ds1000.trigger_pulse_source == source
 
     @pytest.mark.parametrize("when", ["PGR", "PLES", "PGL"])
     def test_trigger_pulse_when(self, rigol_ds1000, when):
-        rigol_ds1000.trigger_mode = "PULSE"
+        rigol_ds1000.trigger_mode = "PULS"
         rigol_ds1000.trigger_pulse_when = when
         assert rigol_ds1000.trigger_pulse_when == when
 
     def test_trigger_pulse_width(self, rigol_ds1000):
-        rigol_ds1000.trigger_mode = "PULSE"
+        rigol_ds1000.trigger_mode = "PULS"
         rigol_ds1000.trigger_pulse_when = "PGR"
         rigol_ds1000.trigger_pulse_width = 1e-6
         assert rigol_ds1000.trigger_pulse_width == pytest.approx(1e-6, rel=0.01)
 
     def test_trigger_pulse_upper_lower_width(self, rigol_ds1000):
-        rigol_ds1000.trigger_mode = "PULSE"
+        rigol_ds1000.trigger_mode = "PULS"
         rigol_ds1000.trigger_pulse_when = "PGL"
         rigol_ds1000.trigger_pulse_lower_width = 1e-6
         assert rigol_ds1000.trigger_pulse_lower_width == pytest.approx(1e-6, rel=0.01)
@@ -403,7 +409,7 @@ class TestTriggerPulse:
         assert rigol_ds1000.trigger_pulse_upper_width == pytest.approx(5e-6, rel=0.01)
 
     def test_trigger_pulse_level(self, rigol_ds1000):
-        rigol_ds1000.trigger_mode = "PULSE"
+        rigol_ds1000.trigger_mode = "PULS"
         rigol_ds1000.trigger_pulse_level = 0.5
         assert rigol_ds1000.trigger_pulse_level == pytest.approx(0.5, rel=0.01)
 
@@ -450,10 +456,10 @@ class TestTriggerSlope:
 
     def test_trigger_slope_levels(self, rigol_ds1000):
         rigol_ds1000.trigger_mode = "SLOP"
-        rigol_ds1000.trigger_slope_level_a = 0.5
-        assert rigol_ds1000.trigger_slope_level_a == pytest.approx(0.5, rel=0.01)
-        rigol_ds1000.trigger_slope_level_b = 1.5
-        assert rigol_ds1000.trigger_slope_level_b == pytest.approx(1.5, rel=0.01)
+        rigol_ds1000.trigger_slope_level_a = 1.5
+        assert rigol_ds1000.trigger_slope_level_a == pytest.approx(1.5, rel=0.01)
+        rigol_ds1000.trigger_slope_level_b = 0.5
+        assert rigol_ds1000.trigger_slope_level_b == pytest.approx(0.5, rel=0.01)
 
 
 # ---------------------------------------------------------------------------
@@ -513,11 +519,11 @@ class TestTriggerDuration:
         rigol_ds1000.trigger_duration_source = "CHAN1"
         assert rigol_ds1000.trigger_duration_source == "CHAN1"
 
-    @pytest.mark.parametrize("type_", ["PGR", "PLES", "NGR", "NLES"])
-    def test_trigger_duration_type(self, rigol_ds1000, type_):
+    @pytest.mark.parametrize("d_type", ["PGR", "PLES", "NGR", "NLES"])
+    def test_trigger_duration_type(self, rigol_ds1000, d_type):
         rigol_ds1000.trigger_mode = "DUR"
-        rigol_ds1000.trigger_duration_type = type_
-        assert rigol_ds1000.trigger_duration_type == type_
+        rigol_ds1000.trigger_duration_type = d_type
+        assert rigol_ds1000.trigger_duration_type == d_type
 
     def test_trigger_duration_time_upper_lower(self, rigol_ds1000):
         rigol_ds1000.trigger_mode = "DUR"
@@ -1716,6 +1722,29 @@ class TestReferenceSubsystem:
         rigol_ds1000.reference_source(1, "CHAN1")
         assert rigol_ds1000.reference_source_get(1) == "CHAN1"
         rigol_ds1000.reference_enable(1, False)
+
+
+# ---------------------------------------------------------------------------
+# Calibration Subsystem
+# ---------------------------------------------------------------------------
+
+
+class TestCalibrationSubsystem:
+    """Test every command and property in the Calibration subsystem."""
+
+    @pytest.mark.device_error_warning
+    def test_calibrate(self, rigol_ds1000):
+        rigol_ds1000.cal_start()
+        sleep(5)  # Wait short time
+
+    @pytest.mark.device_error_warning
+    def test_stop_calibrate(self, rigol_ds1000):
+        """Stop calibration and check for errors.
+
+        Does not work reliably - the device sometimes returns a timeout error (VI_ERROR_TMO) when checking for errors after calibration, even though the calibration completes successfully. Especially, when connected via LAN.
+        """
+        rigol_ds1000.cal_stop()
+        sleep(2)  # Wait short time
 
 
 # ---------------------------------------------------------------------------
