@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Sphinx Build with Live Preview",
+			"type": "shell",
+			"command": ".venv/bin/sphinx-autobuild",
+			"args": [
+				"docs",
+				"docs/_build/html"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}

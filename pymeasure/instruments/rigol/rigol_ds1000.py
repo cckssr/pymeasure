@@ -22,14 +22,13 @@
 # THE SOFTWARE.
 #
 
+import numpy as np
 from pymeasure.instruments import Instrument, Channel, SCPIMixin
 from pymeasure.instruments.validators import (
     truncated_discrete_set,
     truncated_range,
     strict_discrete_set,
-    strict_range,
 )
-import numpy as np
 
 
 class OscilloscopeChannel(Channel):
@@ -191,7 +190,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
         scope.ch1.coupling = "DC"
         scope.timebase_scale = 1e-3   # 1 ms/div
         scope.trigger_edge_level = 0.5
-        scope.run = True
+        scope.run()
     """
 
     _ANALOG_CHANNELS = ["CHAN1", "CHAN2", "CHAN3", "CHAN4"]
@@ -232,41 +231,46 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
     ]
     _CHANNEL_LIST_DGROUPS = _DIGITAL_CHANNELS + _GROUP_CHANNELS + ["NONE"]
 
-    ch1 = Instrument.ChannelCreator(OscilloscopeChannel, "1")
-    ch2 = Instrument.ChannelCreator(OscilloscopeChannel, "2")
-    ch3 = Instrument.ChannelCreator(OscilloscopeChannel, "3")
-    ch4 = Instrument.ChannelCreator(OscilloscopeChannel, "4")
+    ch1: OscilloscopeChannel = Instrument.ChannelCreator(OscilloscopeChannel, "1")  # type: ignore[assignment]
+    ch2: OscilloscopeChannel = Instrument.ChannelCreator(OscilloscopeChannel, "2")  # type: ignore[assignment]
+    ch3: OscilloscopeChannel = Instrument.ChannelCreator(OscilloscopeChannel, "3")  # type: ignore[assignment]
+    ch4: OscilloscopeChannel = Instrument.ChannelCreator(OscilloscopeChannel, "4")  # type: ignore[assignment]
 
     def __init__(self, adapter, name="Rigol DS1000Z Series", **kwargs):
         super().__init__(adapter, name, **kwargs)
 
-    autoscale = Instrument.setting(
-        set_command=":AUToscale", docs="""Set the waveform auto setting."""
-    )
+    def autoscale(self):
+        """Set the waveform auto setting."""
+        self.write(":AUToscale")
 
-    run = Instrument.setting(set_command=":RUN", docs="""Set the oscilloscope to run mode.""")
+    def run(self):
+        """Set the oscilloscope to run mode."""
+        self.write(":RUN")
 
-    stop = Instrument.setting(set_command=":STOP", docs="""Set the oscilloscope to stop mode.""")
+    def stop(self):
+        """Set the oscilloscope to stop mode."""
+        self.write(":STOP")
 
-    force_trigger = Instrument.setting(
-        set_command=":TFORce", docs="""Set the oscilloscope to force a trigger event."""
-    )
+    def force_trigger(self):
+        """Force a trigger event."""
+        self.write(":TFORce")
 
     # #################
     # Acquire Subsystem
     # #################
     acq_averages = Instrument.control(
-        get_command=":ACQuire:AVERages",
+        get_command=":ACQuire:AVERages?",
         set_command=":ACQuire:AVERages %d",
         docs="""Control the number of averages (int) used in acquisition.
         
-        Valid values are 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024 (2^n with n=1..10).""",
+        Valid values are 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024 (2^n with n=1..10).
+        Only works if acquisition mode (acq_mode = 'AVERAGES') is set to AVERAGES.""",
         validator=truncated_discrete_set,
         values=[2, 4, 8, 16, 32, 64, 128, 256, 512, 1024],
     )
 
     acq_memory_depth = Instrument.control(
-        get_command=":ACQuire:MDEPth",
+        get_command=":ACQuire:MDEPth?",
         set_command=":ACQuire:MDEPth %s",
         docs="""Control the memory depth (int) of the acquisition.
         
@@ -277,9 +281,9 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
             - 2 channels: 6k to 12M
             - 4 channels: 3k to 6M
         - Digital channels:
-            - 8 channels: 12k to 23M
+            - 8 channels: 12k to 24M
             - 16 channels: 6k to 12M""",
-        validator=truncated_discrete_set,
+        validator=strict_discrete_set,
         values=[
             "AUTO",
             3_000,
@@ -294,12 +298,12 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
             3_000_000,
             6_000_000,
             12_000_000,
-            23_000_000,
+            24_000_000,
         ],
     )
 
     acq_mode = Instrument.control(
-        get_command=":ACQuire:TYPE",
+        get_command=":ACQuire:TYPE?",
         set_command=":ACQuire:TYPE %s",
         docs="""Control the acquisition mode.
         
@@ -322,18 +326,16 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
     # #####################
     # Calibration Subsystem
     # #####################
-    cal_start = Instrument.setting(
-        set_command=":CALibrate:STARt",
-        docs="""Control the start of the oscilloscope calibration process.
-        
-        The calibration process can improve the working state of the oscilloscope. 
-        Every channels must be disconnected.""",
-    )
+    def cal_start(self):
+        """Control the start of the oscilloscope calibration process.
 
-    cal_stop = Instrument.setting(
-        set_command=":CALibrate:QUIT",
-        docs="""Control the stop of the oscilloscope calibration process.""",
-    )
+        The calibration process can improve the working state of the oscilloscope.
+        Every channels must be disconnected."""
+        self.write(":CALibrate:STARt")
+
+    def cal_stop(self):
+        """Control the stop of the oscilloscope calibration process."""
+        self.write(":CALibrate:QUIT")
 
     # ##################
     # Timebase Subsystem
@@ -863,16 +865,24 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
             with open('screenshot.png', 'wb') as f:
                 f.write(screenshot)
         """
-        data = self.ask(":DISPlay:DATA?")
+        self.write(":DISPlay:DATA?")
 
-        # TMC data format: #<digit><length><data>
-        # First character is '#', second is number of digits in length field
-        if data[0] == "#":
-            header_len = int(data[1]) + 2
-            image_data = data[header_len:-1]  # Remove header and trailing newline
-            return image_data.encode("latin-1") if isinstance(image_data, str) else image_data
+        # Read binary data directly to avoid unicode decoding errors
+        # For VISA connections, use read_raw() to get bytes without decoding
+        if hasattr(self.adapter, "connection") and hasattr(self.adapter.connection, "read_raw"):
+            data_bytes = self.adapter.connection.read_raw()
         else:
-            return data.encode("latin-1") if isinstance(data, str) else data
+            # Fallback: try to read as string and encode
+            data = self.read()
+            data_bytes = data.encode("latin-1")
+
+        # TMC (Test & Measurement Class) data format: #<digit><length><data>
+        # First character is '#', second is number of digits in length field
+        if data_bytes[0:1] == b"#":
+            header_len = int(chr(data_bytes[1])) + 2
+            image_data = data_bytes[header_len:-1]  # Remove header and trailing newline
+            return image_data
+        return data_bytes
 
     # Measurement Subsystem
     measure_source = Instrument.control(
@@ -3083,7 +3093,11 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
     system_error = Instrument.measurement(
         get_command=":SYSTem:ERRor?",
-        docs="""Get the last system error as a string in format '<number>,<message>'.""",
+        docs="""Get the last system error as a tuple of (error_code, error_message).
+
+        Returns a tuple of (int, str), e.g. (0, "No error") when no error has occurred.
+        A non-zero error_code indicates an error condition.""",
+        cast=lambda v: (int(v.split(",", 1)[0].strip()), v.split(",", 1)[1].strip().strip('"')),
     )
 
     system_gam = Instrument.measurement(
