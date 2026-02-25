@@ -107,7 +107,7 @@ class OscilloscopeChannel(Channel):
 
     delay_calibration = Instrument.control(
         get_command=":CHANnel{ch}:TCAL?",
-        set_command=":CHANnel{ch}:TCAL %f",
+        set_command=":CHANnel{ch}:TCAL %e",
         docs="""Control the delay calibration time of the channel in seconds (float).
 
         The time is used to calibrate the zero time offset of the channel. Valid values are between
@@ -567,7 +567,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
     trigger_holdoff = Instrument.control(
         get_command=":TRIGger:HOLDoff?",
-        set_command=":TRIGger:HOLDoff %f",
+        set_command=":TRIGger:HOLDoff %e",
         docs="""Control the trigger holdoff time in seconds (float).
 
         The holdoff time is the minimum time before the trigger circuit can re-arm after a trigger
@@ -1908,7 +1908,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
     trigger_pulse_width = Instrument.control(
         get_command=":TRIGger:PULSe:WIDTh?",
-        set_command=":TRIGger:PULSe:WIDTh %f",
+        set_command=":TRIGger:PULSe:WIDTh %e",
         docs="""Control the pulse width for trigger in seconds (float).
 
         Used when trigger_pulse_when is PGReater or PLESs. Valid range is 8 ns to 10 s.""",
@@ -1918,7 +1918,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
     trigger_pulse_upper_width = Instrument.control(
         get_command=":TRIGger:PULSe:UWIDth?",
-        set_command=":TRIGger:PULSe:UWIDth %f",
+        set_command=":TRIGger:PULSe:UWIDth %e",
         docs="""Control the upper pulse width limit in seconds (float).
 
         Used when trigger_pulse_when is PGLess. Valid range is 16 ns to 10 s.""",
@@ -1928,7 +1928,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
     trigger_pulse_lower_width = Instrument.control(
         get_command=":TRIGger:PULSe:LWIDth?",
-        set_command=":TRIGger:PULSe:LWIDth %f",
+        set_command=":TRIGger:PULSe:LWIDth %e",
         docs="""Control the lower pulse width limit in seconds (float).
 
         Used when trigger_pulse_when is PGLess. Valid range is 8 ns to 10 s.""",
@@ -1975,7 +1975,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
     trigger_slope_time = Instrument.control(
         get_command=":TRIGger:SLOPe:TIME?",
-        set_command=":TRIGger:SLOPe:TIME %f",
+        set_command=":TRIGger:SLOPe:TIME %e",
         docs="""Control the slope time for trigger in seconds (float).
 
         Used when trigger_slope_when is PGReater, PLESs, NGReater, or NLESs.
@@ -1986,7 +1986,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
     trigger_slope_time_upper = Instrument.control(
         get_command=":TRIGger:SLOPe:TUPPer?",
-        set_command=":TRIGger:SLOPe:TUPPer %f",
+        set_command=":TRIGger:SLOPe:TUPPer %e",
         docs="""Control the upper slope time limit in seconds (float).
 
         Used when trigger_slope_when is PGLess or NGLess. Valid range is 16 ns to 10 s.""",
@@ -1996,7 +1996,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
     trigger_slope_time_lower = Instrument.control(
         get_command=":TRIGger:SLOPe:TLOWer?",
-        set_command=":TRIGger:SLOPe:TLOWer %f",
+        set_command=":TRIGger:SLOPe:TLOWer %e",
         docs="""Control the lower slope time limit in seconds (float).
 
         Used when trigger_slope_when is PGLess or NGLess. Valid range is 8 ns to 10 s.""",
@@ -2177,7 +2177,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
     trigger_duration_time_upper = Instrument.control(
         get_command=":TRIGger:DURATion:TUPPer?",
-        set_command=":TRIGger:DURATion:TUPPer %f",
+        set_command=":TRIGger:DURATion:TUPPer %e",
         docs="""Control the upper duration time limit in seconds (float).
 
         Used when trigger_duration_type includes 'GLess'. Valid range is 16 ns to 10 s.""",
@@ -2187,7 +2187,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
     trigger_duration_time_lower = Instrument.control(
         get_command=":TRIGger:DURATion:TLOWer?",
-        set_command=":TRIGger:DURATion:TLOWer %f",
+        set_command=":TRIGger:DURATion:TLOWer %e",
         docs="""Control the lower duration time limit in seconds (float).
 
         Used when trigger_duration_type includes 'GLess'. Valid range is 8 ns to 10 s.""",
@@ -2221,7 +2221,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
     trigger_timeout_time = Instrument.control(
         get_command=":TRIGger:TIMeout:TIMe?",
-        set_command=":TRIGger:TIMeout:TIMe %f",
+        set_command=":TRIGger:TIMeout:TIMe %e",
         docs="""Control the timeout time in seconds (float).
 
         Triggers when the signal stays idle (no edge) for longer than this time.
@@ -2269,7 +2269,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
     trigger_runt_width = Instrument.control(
         get_command=":TRIGger:RUNT:WIDTh?",
-        set_command=":TRIGger:RUNT:WIDTh %f",
+        set_command=":TRIGger:RUNT:WIDTh %e",
         docs="""Control the runt pulse width for time qualification in seconds (float).
 
         Used when trigger_runt_when is PGReater or PLESs. Valid range is 8 ns to 10 s.""",
@@ -2279,7 +2279,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
     trigger_runt_upper_width = Instrument.control(
         get_command=":TRIGger:RUNT:WUPPer?",
-        set_command=":TRIGger:RUNT:WUPPer %f",
+        set_command=":TRIGger:RUNT:WUPPer %e",
         docs="""Control the upper runt width limit in seconds (float).
 
         Used when trigger_runt_when is PGLess. Valid range is 16 ns to 10 s.""",
@@ -2289,7 +2289,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
     trigger_runt_lower_width = Instrument.control(
         get_command=":TRIGger:RUNT:WLOWer?",
-        set_command=":TRIGger:RUNT:WLOWer %f",
+        set_command=":TRIGger:RUNT:WLOWer %e",
         docs="""Control the lower runt width limit in seconds (float).
 
         Used when trigger_runt_when is PGLess. Valid range is 8 ns to 10 s.""",
@@ -2346,15 +2346,15 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
         Valid values are:
         - EXIT: Trigger when signal exits the window
-        - ENTer: Trigger when signal enters the window
+        - ENTER: Trigger when signal enters the window
         - TIMe: Trigger when signal stays in window for specified time""",
         validator=strict_discrete_set,
-        values=["EXIT", "ENT", "TIM"],
+        values=["EXIT", "ENTER", "TIM"],
     )
 
     trigger_windows_time = Instrument.control(
         get_command=":TRIGger:WINDows:TIMe?",
-        set_command=":TRIGger:WINDows:TIMe %f",
+        set_command=":TRIGger:WINDows:TIMe %e",
         docs="""Control the time qualification for windows trigger in seconds (float).
 
         Used when trigger_windows_position is TIMe. Valid range is 8 ns to 10 s.""",
@@ -2437,19 +2437,9 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
         values=["GRE", "LESS", "GLES", "GOUT"],
     )
 
-    trigger_delay_time = Instrument.control(
-        get_command=":TRIGger:DELay:TIMe?",
-        set_command=":TRIGger:DELay:TIMe %f",
-        docs="""Control the delay time in seconds (float).
-
-        Used when trigger_delay_type is GREater or LESS. Valid range is 8 ns to 10 s.""",
-        validator=truncated_range,
-        values=(8e-9, 10.0),
-    )
-
     trigger_delay_time_upper = Instrument.control(
         get_command=":TRIGger:DELay:TUPPer?",
-        set_command=":TRIGger:DELay:TUPPer %f",
+        set_command=":TRIGger:DELay:TUPPer %e",
         docs="""Control the upper delay time limit in seconds (float).
 
         Used when trigger_delay_type is GLESs or GOUT. Valid range is 16 ns to 10 s.""",
@@ -2459,7 +2449,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
     trigger_delay_time_lower = Instrument.control(
         get_command=":TRIGger:DELay:TLOWer?",
-        set_command=":TRIGger:DELay:TLOWer %f",
+        set_command=":TRIGger:DELay:TLOWer %e",
         docs="""Control the lower delay time limit in seconds (float).
 
         Used when trigger_delay_type is GLESs or GOUT. Valid range is 8 ns to 10 s.""",
@@ -2507,10 +2497,9 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
         Valid values are:
         - H: High level
-        - L: Low level
-        - X: Don't care""",
+        - L: Low level""",
         validator=strict_discrete_set,
-        values=["H", "L", "X"],
+        values=["H", "L"],
     )
 
     trigger_shol_type = Instrument.control(
@@ -2523,12 +2512,12 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
         - HOLd: Hold time violation
         - SETHOLd: Setup or hold time violation""",
         validator=strict_discrete_set,
-        values=["SET", "HOL", "SETH"],
+        values=["SET", "HOL", "SETHOL"],
     )
 
     trigger_shol_setup_time = Instrument.control(
         get_command=":TRIGger:SHOLd:STIMe?",
-        set_command=":TRIGger:SHOLd:STIMe %f",
+        set_command=":TRIGger:SHOLd:STIMe %e",
         docs="""Control the setup time in seconds (float).
 
         The minimum time data must be stable before the clock edge. Valid range is 8 ns to 1 s.""",
@@ -2538,7 +2527,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
     trigger_shol_hold_time = Instrument.control(
         get_command=":TRIGger:SHOLd:HTIMe?",
-        set_command=":TRIGger:SHOLd:HTIMe %f",
+        set_command=":TRIGger:SHOLd:HTIMe %e",
         docs="""Control the hold time in seconds (float).
 
         The minimum time data must be stable after the clock edge. Valid range is 8 ns to 1 s.""",
@@ -2571,7 +2560,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
 
     trigger_nedge_idle = Instrument.control(
         get_command=":TRIGger:NEDGe:IDLE?",
-        set_command=":TRIGger:NEDGe:IDLE %f",
+        set_command=":TRIGger:NEDGe:IDLE %e",
         docs="""Control the idle time before edge counting starts in seconds (float).
 
         Valid range is 16 ns to 10 s.""",
@@ -2624,27 +2613,6 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
         values=["STAR", "ERR", "PAR", "DATA"],
     )
 
-    trigger_rs232_baud = Instrument.control(
-        get_command=":TRIGger:RS232:BAUD?",
-        set_command=":TRIGger:RS232:BAUD %d",
-        docs="""Control the RS232 baud rate in bits per second (int).
-
-        Common values are 2400, 4800, 9600, 19200, 38400, 57600, 115200, etc.
-        Can also be set to USER for custom baud rate.""",
-        validator=truncated_discrete_set,
-        values=[2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600],
-    )
-
-    trigger_rs232_data_bits = Instrument.control(
-        get_command=":TRIGger:RS232:DATA?",
-        set_command=":TRIGger:RS232:DATA %d",
-        docs="""Control the number of data bits in RS232 frame (int).
-
-        Valid values are 5, 6, 7, 8.""",
-        validator=strict_discrete_set,
-        values=[5, 6, 7, 8],
-    )
-
     trigger_rs232_parity = Instrument.control(
         get_command=":TRIGger:RS232:PARity?",
         set_command=":TRIGger:RS232:PARity %s",
@@ -2663,31 +2631,66 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
         set_command=":TRIGger:RS232:STOP %s",
         docs="""Control the number of stop bits in RS232 frame.
 
-        Valid values are 1, 1.5, 2 stop bits.""",
+        Valid values are 1, 2 stop bits.""",
         validator=strict_discrete_set,
-        values=["1", "1.5", "2"],
+        values=[1, 2],
     )
 
-    trigger_rs232_bus_data = Instrument.control(
-        get_command=":TRIGger:RS232:BUSD?",
-        set_command=":TRIGger:RS232:BUSD %s",
-        docs="""Control the data value to trigger on (hex string).
+    trigger_rs232_data_width = Instrument.control(
+        get_command=":TRIGger:RS232:DATA?",
+        set_command=":TRIGger:RS232:DATA %d",
+        docs="""Control the length of data in the RS232 trigger frame (int).
 
-        Format: hex value as string (e.g., "0A", "FF"). Used when trigger_rs232_when is DATA.""",
-        validator=strict_discrete_set,
-        values=["00"],  # Placeholder - accepts any hex string
+        Valid values are 0 to 2^n - 1, where n is the current number of data bits (5, 6, 7, 8). 
+        Default is 90.""",
+        validator=truncated_range,
+        values=(0, 255),
     )
 
-    trigger_rs232_polarity = Instrument.control(
-        get_command=":TRIGger:RS232:POL?",
-        set_command=":TRIGger:RS232:POL %s",
-        docs="""Control the RS232 signal polarity.
+    trigger_rs232_data_bits = Instrument.control(
+        get_command=":TRIGger:RS232:WIDTh?",
+        set_command=":TRIGger:RS232:WIDTh %d",
+        docs="""Control the number of data bits in the RS232 trigger frame (int).
 
-        Valid values are:
-        - NORMal: Normal polarity (idle high)
-        - INVerted: Inverted polarity (idle low)""",
+        Defines how many bits are in the data portion of the RS232 frame. 
+        This affects the valid range for trigger_rs232_data_width.
+        Valid values are 5, 6, 7, 8 bits.""",
         validator=strict_discrete_set,
-        values=["NORM", "INV"],
+        values=[5, 6, 7, 8],
+    )
+
+    trigger_rs232_baud = Instrument.control(
+        get_command=":TRIGger:RS232:BAUD?",
+        set_command=":TRIGger:RS232:BAUD %s",
+        docs="""Control the RS232 baud rate in bits per second (int).
+
+        Common values are 2400, 4800, 9600, 19200, 38400, 57600, 115200, etc.
+        Can also be set to USER for custom baud rate, controlled via trigger_rs232_user_baud.""",
+        validator=strict_discrete_set,
+        values=[
+            2400,
+            4800,
+            9600,
+            19200,
+            38400,
+            57600,
+            115200,
+            230400,
+            460800,
+            921600,
+            1000000,
+            "USER",
+        ],
+    )
+
+    trigger_rs232_user_baud = Instrument.control(
+        get_command=":TRIGger:RS232:BUSer?",
+        set_command=":TRIGger:RS232:BUSer %s",
+        docs="""Control the user-defined RS232 baud rate in bits per second (int).
+
+        Used when trigger_rs232_baud is set to USER. Valid range is 110 to 1 000 000 bps.""",
+        validator=truncated_range,
+        values=(110, 1_000_000),
     )
 
     trigger_rs232_level = Instrument.control(
@@ -2701,9 +2704,9 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
     )
 
     # Trigger Subsystem - I2C Trigger (Option)
-    trigger_iic_clock_source = Instrument.control(
-        get_command=":TRIGger:IIC:SCLK?",
-        set_command=":TRIGger:IIC:SCLK %s",
+    trigger_i2c_clock_source = Instrument.control(
+        get_command=":TRIGger:IIC:SCL?",
+        set_command=":TRIGger:IIC:SCL %s",
         docs="""Control the I2C clock (SCL) source.
 
         Valid values are CHANnel1-4, D0-D15 (digital channels on MSO models).""",
@@ -2711,7 +2714,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
         values=_CHANNEL_LIST,
     )
 
-    trigger_iic_data_source = Instrument.control(
+    trigger_i2c_data_source = Instrument.control(
         get_command=":TRIGger:IIC:SDA?",
         set_command=":TRIGger:IIC:SDA %s",
         docs="""Control the I2C data (SDA) source.
@@ -2721,7 +2724,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
         values=_CHANNEL_LIST,
     )
 
-    trigger_iic_when = Instrument.control(
+    trigger_i2c_when = Instrument.control(
         get_command=":TRIGger:IIC:WHEN?",
         set_command=":TRIGger:IIC:WHEN %s",
         docs="""Control when to trigger on I2C bus.
@@ -2730,26 +2733,37 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
         - STARt: Trigger on start condition
         - RESTart: Trigger on repeated start condition
         - STOP: Trigger on stop condition
-        - NACK: Trigger on missing acknowledge
+        - NACKnowledge: Trigger on missing acknowledge
         - ADDRess: Trigger on address match
         - DATA: Trigger on data match
-        - ADATA: Trigger on address and data match""",
+        - ADATa: Trigger on address and data match""",
         validator=strict_discrete_set,
         values=["STAR", "REST", "STOP", "NACK", "ADDR", "DATA", "ADAT"],
     )
 
-    trigger_iic_address = Instrument.control(
-        get_command=":TRIGger:IIC:ADDRess?",
-        set_command=":TRIGger:IIC:ADDRess %s",
-        docs="""Control the I2C address to trigger on (hex string).
+    trigger_i2c_awidth = Instrument.control(
+        get_command=":TRIGger:IIC:AWIDth?",
+        set_command=":TRIGger:IIC:AWIDth %d",
+        docs="""Control the I2C address width in bits (int).
 
-        Format: 7-bit or 10-bit address as hex string. 
-        Used when trigger_iic_when includes address.""",
+        Valid values are 7, 8 or 10 bits. Used when trigger_i2c_when is ADDRess or ADATa.""",
         validator=strict_discrete_set,
-        values=["00"],  # Placeholder - accepts any hex string
+        values=[7, 8, 10],
     )
 
-    trigger_iic_direction = Instrument.control(
+    trigger_i2c_address = Instrument.control(
+        get_command=":TRIGger:IIC:ADDRess?",
+        set_command=":TRIGger:IIC:ADDRess %d",
+        docs="""Control the I2C address to trigger on (int).
+
+        Valid range depends on the address width (0 to 2^n - 1 with n address width):
+        7-bit: 0-127, 8-bit: 0-255, 10-bit: 0-1023.
+        Used when trigger_i2c_when is ADDRess or ADATa.""",
+        validator=truncated_range,
+        values=(0, 1023),
+    )
+
+    trigger_i2c_direction = Instrument.control(
         get_command=":TRIGger:IIC:DIRection?",
         set_command=":TRIGger:IIC:DIRection %s",
         docs="""Control the I2C transfer direction for triggering.
@@ -2759,20 +2773,21 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
         - WRITe: Trigger on write transfers (R/W bit = 0)
         - RWRite: Trigger on either direction""",
         validator=strict_discrete_set,
-        values=["READ", "WRI", "RWR"],
+        values=["READ", "WRIT", "RWR"],
     )
 
-    trigger_iic_data = Instrument.control(
+    trigger_i2c_data = Instrument.control(
         get_command=":TRIGger:IIC:DATA?",
-        set_command=":TRIGger:IIC:DATA %s",
-        docs="""Control the I2C data value to trigger on (hex string).
+        set_command=":TRIGger:IIC:DATA %e",
+        docs="""Control the I2C data value to trigger on (int).
 
-        Format: hex byte value as string. Used when trigger_iic_when includes data.""",
-        validator=strict_discrete_set,
-        values=["00"],  # Placeholder - accepts any hex string
+        Valid range is 0 to 5 bytes (40 bits) of data: 0 to 2^40 - 1 (1099511627775).
+        Used when trigger_i2c_when is DATA or ADATa.""",
+        validator=truncated_range,
+        values=(0, 2**40 - 1),
     )
 
-    trigger_iic_clock_level = Instrument.control(
+    trigger_i2c_clock_level = Instrument.control(
         get_command=":TRIGger:IIC:SCLKL?",
         set_command=":TRIGger:IIC:SCLKL %f",
         docs="""Control the I2C clock (SCL) threshold level in volts (float).
@@ -2782,7 +2797,7 @@ class RigolDS1000ZSeries(SCPIMixin, Instrument):
         values=(-100.0, 100.0),
     )
 
-    trigger_iic_data_level = Instrument.control(
+    trigger_i2c_data_level = Instrument.control(
         get_command=":TRIGger:IIC:SDAL?",
         set_command=":TRIGger:IIC:SDAL %f",
         docs="""Control the I2C data (SDA) threshold level in volts (float).

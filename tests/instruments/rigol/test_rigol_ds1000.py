@@ -67,6 +67,15 @@ def rigol_ds1000(connected_device_address, generator) -> RigolDS1000ZSeries:
 
 
 # ---------------------------------------------------------------------------
+# Common test functions
+# ---------------------------------------------------------------------------
+
+
+def _ensure_channel_enabled(device, channel_nr):
+    getattr(device, "ch" + str(channel_nr)).is_enabled = True  # Ensure source channel is enabled
+
+
+# ---------------------------------------------------------------------------
 # Basic operations
 # ---------------------------------------------------------------------------
 
@@ -98,8 +107,6 @@ def test_force_trigger(rigol_ds1000):
 # ---------------------------------------------------------------------------
 # Acquire Subsystem
 # ---------------------------------------------------------------------------
-
-
 class TestAcquireSubsystem:
     """Test every command and property in the Acquire subsystem."""
 
@@ -149,8 +156,6 @@ class TestAcquireSubsystem:
 # ---------------------------------------------------------------------------
 # Channel Subsystem
 # ---------------------------------------------------------------------------
-
-
 class TestChannelSubsystem:
     """Test every command and property in the Channel subsystem.
 
@@ -234,8 +239,6 @@ class TestChannelSubsystem:
 # ---------------------------------------------------------------------------
 # Timebase Subsystem
 # ---------------------------------------------------------------------------
-
-
 class TestTimebaseSubsystem:
     """Test every command and property in the Timebase subsystem."""
 
@@ -282,8 +285,6 @@ class TestTimebaseSubsystem:
 # ---------------------------------------------------------------------------
 # Trigger Subsystem – Common
 # ---------------------------------------------------------------------------
-
-
 class TestTriggerCommon:
     """Test common trigger settings (mode-independent)."""
 
@@ -343,16 +344,12 @@ class TestTriggerCommon:
 # ---------------------------------------------------------------------------
 # Trigger Subsystem – Edge
 # ---------------------------------------------------------------------------
-
-
 class TestTriggerEdge:
     """Test edge trigger settings."""
 
     @pytest.mark.parametrize("source", ["CHAN1", "CHAN2", "CHAN3", "CHAN4"])
     def test_trigger_edge_source(self, rigol_ds1000, source):
-        getattr(rigol_ds1000, "ch" + source[-1]).is_enabled = (
-            True  # Ensure source channel is enabled
-        )
+        _ensure_channel_enabled(rigol_ds1000, source[-1])
         rigol_ds1000.trigger_mode = "EDGE"
         rigol_ds1000.trigger_edge_source = source
         assert rigol_ds1000.trigger_edge_source == source
@@ -364,6 +361,7 @@ class TestTriggerEdge:
         assert rigol_ds1000.trigger_edge_slope == slope
 
     def test_trigger_edge_level(self, rigol_ds1000):
+        _ensure_channel_enabled(rigol_ds1000, 1)
         rigol_ds1000.trigger_mode = "EDGE"
         rigol_ds1000.trigger_edge_source = "CHAN1"
         rigol_ds1000.trigger_edge_level = 1.0
@@ -374,8 +372,6 @@ class TestTriggerEdge:
 # ---------------------------------------------------------------------------
 # Trigger Subsystem – Pulse Width
 # ---------------------------------------------------------------------------
-
-
 class TestTriggerPulse:
     """Test pulse width trigger settings.
 
@@ -384,6 +380,7 @@ class TestTriggerPulse:
 
     @pytest.mark.parametrize("source", ["CHAN1", "CHAN2"])
     def test_trigger_pulse_source(self, rigol_ds1000, source):
+        _ensure_channel_enabled(rigol_ds1000, source[-1])
         rigol_ds1000.trigger_mode = "PULS"
         rigol_ds1000.trigger_pulse_source = source
         assert rigol_ds1000.trigger_pulse_source == source
@@ -417,13 +414,12 @@ class TestTriggerPulse:
 # ---------------------------------------------------------------------------
 # Trigger Subsystem – Slope
 # ---------------------------------------------------------------------------
-
-
 class TestTriggerSlope:
     """Test slope trigger settings."""
 
     @pytest.mark.parametrize("source", ["CHAN1", "CHAN2"])
     def test_trigger_slope_source(self, rigol_ds1000, source):
+        _ensure_channel_enabled(rigol_ds1000, source[-1])
         rigol_ds1000.trigger_mode = "SLOP"
         rigol_ds1000.trigger_slope_source = source
         assert rigol_ds1000.trigger_slope_source == source
@@ -465,13 +461,12 @@ class TestTriggerSlope:
 # ---------------------------------------------------------------------------
 # Trigger Subsystem – Video
 # ---------------------------------------------------------------------------
-
-
 class TestTriggerVideo:
     """Test video trigger settings."""
 
     @pytest.mark.parametrize("source", ["CHAN1", "CHAN2"])
     def test_trigger_video_source(self, rigol_ds1000, source):
+        _ensure_channel_enabled(rigol_ds1000, source[-1])
         rigol_ds1000.trigger_mode = "VID"
         rigol_ds1000.trigger_video_source = source
         assert rigol_ds1000.trigger_video_source == source
@@ -511,10 +506,12 @@ class TestTriggerVideo:
 # ---------------------------------------------------------------------------
 
 
+# TODO: The d_type is not implemented correctly in the driver
 class TestTriggerDuration:
     """Test duration trigger settings."""
 
     def test_trigger_duration_source(self, rigol_ds1000):
+        _ensure_channel_enabled(rigol_ds1000, 1)
         rigol_ds1000.trigger_mode = "DUR"
         rigol_ds1000.trigger_duration_source = "CHAN1"
         assert rigol_ds1000.trigger_duration_source == "CHAN1"
@@ -537,12 +534,11 @@ class TestTriggerDuration:
 # ---------------------------------------------------------------------------
 # Trigger Subsystem – Timeout
 # ---------------------------------------------------------------------------
-
-
 class TestTriggerTimeout:
     """Test timeout trigger settings."""
 
     def test_trigger_timeout_source(self, rigol_ds1000):
+        _ensure_channel_enabled(rigol_ds1000, 1)
         rigol_ds1000.trigger_mode = "TIM"
         rigol_ds1000.trigger_timeout_source = "CHAN1"
         assert rigol_ds1000.trigger_timeout_source == "CHAN1"
@@ -564,11 +560,13 @@ class TestTriggerTimeout:
 # ---------------------------------------------------------------------------
 
 
+# TODO: Check FAILED tests/instruments/rigol/test_rigol_ds1000.py::TestTriggerRunt::test_trigger_runt_when[PGR] - AssertionError: assert 'NONE' == 'PGR'
 class TestTriggerRunt:
     """Test runt pulse trigger settings."""
 
     @pytest.mark.parametrize("source", ["CHAN1", "CHAN2"])
     def test_trigger_runt_source(self, rigol_ds1000, source):
+        _ensure_channel_enabled(rigol_ds1000, source[-1])
         rigol_ds1000.trigger_mode = "RUNT"
         rigol_ds1000.trigger_runt_source = source
         assert rigol_ds1000.trigger_runt_source == source
@@ -610,13 +608,12 @@ class TestTriggerRunt:
 # ---------------------------------------------------------------------------
 # Trigger Subsystem – Windows
 # ---------------------------------------------------------------------------
-
-
 class TestTriggerWindows:
     """Test windows trigger settings."""
 
     @pytest.mark.parametrize("source", ["CHAN1", "CHAN2"])
     def test_trigger_windows_source(self, rigol_ds1000, source):
+        _ensure_channel_enabled(rigol_ds1000, source[-1])
         rigol_ds1000.trigger_mode = "WIND"
         rigol_ds1000.trigger_windows_source = source
         assert rigol_ds1000.trigger_windows_source == source
@@ -627,7 +624,7 @@ class TestTriggerWindows:
         rigol_ds1000.trigger_windows_slope = slope
         assert rigol_ds1000.trigger_windows_slope == slope
 
-    @pytest.mark.parametrize("position", ["EXIT", "ENT", "TIM"])
+    @pytest.mark.parametrize("position", ["EXIT", "ENTER", "TIM"])
     def test_trigger_windows_position(self, rigol_ds1000, position):
         rigol_ds1000.trigger_mode = "WIND"
         rigol_ds1000.trigger_windows_position = position
@@ -650,8 +647,6 @@ class TestTriggerWindows:
 # ---------------------------------------------------------------------------
 # Trigger Subsystem – Delay
 # ---------------------------------------------------------------------------
-
-
 class TestTriggerDelay:
     """Test delay trigger settings.
 
@@ -659,6 +654,8 @@ class TestTriggerDelay:
     """
 
     def test_trigger_delay_sources(self, rigol_ds1000):
+        _ensure_channel_enabled(rigol_ds1000, 1)
+        _ensure_channel_enabled(rigol_ds1000, 2)
         rigol_ds1000.trigger_mode = "DEL"
         rigol_ds1000.trigger_delay_source_a = "CHAN1"
         assert rigol_ds1000.trigger_delay_source_a == "CHAN1"
@@ -683,12 +680,6 @@ class TestTriggerDelay:
         rigol_ds1000.trigger_delay_type = type_
         assert rigol_ds1000.trigger_delay_type == type_
 
-    def test_trigger_delay_time(self, rigol_ds1000):
-        rigol_ds1000.trigger_mode = "DEL"
-        rigol_ds1000.trigger_delay_type = "GRE"
-        rigol_ds1000.trigger_delay_time = 1e-6
-        assert rigol_ds1000.trigger_delay_time == pytest.approx(1e-6, rel=0.01)
-
     def test_trigger_delay_time_upper_lower(self, rigol_ds1000):
         rigol_ds1000.trigger_mode = "DEL"
         rigol_ds1000.trigger_delay_type = "GLES"
@@ -701,8 +692,6 @@ class TestTriggerDelay:
 # ---------------------------------------------------------------------------
 # Trigger Subsystem – Setup/Hold
 # ---------------------------------------------------------------------------
-
-
 class TestTriggerSHOL:
     """Test setup/hold trigger settings.
 
@@ -710,6 +699,8 @@ class TestTriggerSHOL:
     """
 
     def test_trigger_shol_sources(self, rigol_ds1000):
+        _ensure_channel_enabled(rigol_ds1000, 1)
+        _ensure_channel_enabled(rigol_ds1000, 2)
         rigol_ds1000.trigger_mode = "SHOL"
         rigol_ds1000.trigger_shol_clock_source = "CHAN1"
         assert rigol_ds1000.trigger_shol_clock_source == "CHAN1"
@@ -722,13 +713,13 @@ class TestTriggerSHOL:
         rigol_ds1000.trigger_shol_slope = slope
         assert rigol_ds1000.trigger_shol_slope == slope
 
-    @pytest.mark.parametrize("pattern", ["H", "L", "X"])
+    @pytest.mark.parametrize("pattern", ["H", "L"])
     def test_trigger_shol_pattern(self, rigol_ds1000, pattern):
         rigol_ds1000.trigger_mode = "SHOL"
         rigol_ds1000.trigger_shol_pattern = pattern
         assert rigol_ds1000.trigger_shol_pattern == pattern
 
-    @pytest.mark.parametrize("type_", ["SET", "HOL", "SETH"])
+    @pytest.mark.parametrize("type_", ["SET", "HOL", "SETHOL"])
     def test_trigger_shol_type(self, rigol_ds1000, type_):
         rigol_ds1000.trigger_mode = "SHOL"
         rigol_ds1000.trigger_shol_type = type_
@@ -748,13 +739,12 @@ class TestTriggerSHOL:
 # ---------------------------------------------------------------------------
 # Trigger Subsystem – Nth Edge
 # ---------------------------------------------------------------------------
-
-
 class TestTriggerNthEdge:
     """Test Nth edge trigger settings."""
 
     @pytest.mark.parametrize("source", ["CHAN1", "CHAN2"])
     def test_trigger_nedge_source(self, rigol_ds1000, source):
+        _ensure_channel_enabled(rigol_ds1000, source[-1])
         rigol_ds1000.trigger_mode = "NEDG"
         rigol_ds1000.trigger_nedge_source = source
         assert rigol_ds1000.trigger_nedge_source == source
@@ -785,10 +775,15 @@ class TestTriggerNthEdge:
 # ---------------------------------------------------------------------------
 # Trigger Subsystem – RS232/UART
 # ---------------------------------------------------------------------------
-
-
 class TestTriggerRS232:
     """Test RS232/UART trigger settings."""
+
+    @pytest.mark.parametrize("source", ["CHAN1", "CHAN2"])
+    def test_trigger_rs232_source(self, rigol_ds1000, source):
+        _ensure_channel_enabled(rigol_ds1000, source[-1])
+        rigol_ds1000.trigger_mode = "RS232"
+        rigol_ds1000.trigger_rs232_source = source
+        assert rigol_ds1000.trigger_rs232_source == source
 
     @pytest.mark.parametrize("when", ["STAR", "ERR", "PAR", "DATA"])
     def test_trigger_rs232_when(self, rigol_ds1000, when):
@@ -796,17 +791,18 @@ class TestTriggerRS232:
         rigol_ds1000.trigger_rs232_when = when
         assert rigol_ds1000.trigger_rs232_when == when
 
-    @pytest.mark.parametrize("baud", [9600, 19200, 115200])
+    @pytest.mark.parametrize("baud", [9600, 19200, 115200, "USER"])
     def test_trigger_rs232_baud(self, rigol_ds1000, baud):
         rigol_ds1000.trigger_mode = "RS232"
         rigol_ds1000.trigger_rs232_baud = baud
         assert rigol_ds1000.trigger_rs232_baud == baud
 
-    @pytest.mark.parametrize("bits", [5, 6, 7, 8])
-    def test_trigger_rs232_data_bits(self, rigol_ds1000, bits):
+    @pytest.mark.parametrize("userbaud", [111, 23456, 999_999])
+    def test_trigger_rs232_user_baud(self, rigol_ds1000, userbaud):
         rigol_ds1000.trigger_mode = "RS232"
-        rigol_ds1000.trigger_rs232_data_bits = bits
-        assert rigol_ds1000.trigger_rs232_data_bits == bits
+        rigol_ds1000.trigger_rs232_baud = "USER"
+        rigol_ds1000.trigger_rs232_user_baud = userbaud
+        assert rigol_ds1000.trigger_rs232_user_baud == userbaud
 
     @pytest.mark.parametrize("parity", ["NONE", "EVEN", "ODD"])
     def test_trigger_rs232_parity(self, rigol_ds1000, parity):
@@ -814,17 +810,24 @@ class TestTriggerRS232:
         rigol_ds1000.trigger_rs232_parity = parity
         assert rigol_ds1000.trigger_rs232_parity == parity
 
-    @pytest.mark.parametrize("stop", ["1", "2"])
+    @pytest.mark.parametrize("stop", [1, 2])
     def test_trigger_rs232_stop_bits(self, rigol_ds1000, stop):
         rigol_ds1000.trigger_mode = "RS232"
         rigol_ds1000.trigger_rs232_stop_bits = stop
-        assert rigol_ds1000.trigger_rs232_stop_bits == stop
+        assert rigol_ds1000.trigger_rs232_stop_bits == float(stop)
 
-    @pytest.mark.parametrize("polarity", ["NORM", "INV"])
-    def test_trigger_rs232_polarity(self, rigol_ds1000, polarity):
+    @pytest.mark.parametrize("bits", [5, 6, 7, 8])
+    def test_trigger_rs232_data_bits(self, rigol_ds1000, bits):
         rigol_ds1000.trigger_mode = "RS232"
-        rigol_ds1000.trigger_rs232_polarity = polarity
-        assert rigol_ds1000.trigger_rs232_polarity == polarity
+        rigol_ds1000.trigger_rs232_data_bits = bits
+        assert rigol_ds1000.trigger_rs232_data_bits == bits
+
+    @pytest.mark.parametrize("datalen", [0, 31, 254])
+    def test_trigger_rs232_data_width(self, rigol_ds1000, datalen):
+        rigol_ds1000.trigger_mode = "RS232"
+        rigol_ds1000.trigger_rs232_data_bits = 8
+        rigol_ds1000.trigger_rs232_data_width = datalen
+        assert rigol_ds1000.trigger_rs232_data_width == datalen
 
     def test_trigger_rs232_level(self, rigol_ds1000):
         rigol_ds1000.trigger_mode = "RS232"
@@ -835,50 +838,72 @@ class TestTriggerRS232:
 # ---------------------------------------------------------------------------
 # Trigger Subsystem – I2C
 # ---------------------------------------------------------------------------
-
-
-class TestTriggerIIC:
+class TestTriggerI2C:
     """Test I2C trigger settings.
 
     The clock (SCL) and data (SDA) sources must be on different channels.
     """
 
-    def test_trigger_iic_sources(self, rigol_ds1000):
+    def test_trigger_i2c_sources(self, rigol_ds1000):
+        _ensure_channel_enabled(rigol_ds1000, 1)
+        _ensure_channel_enabled(rigol_ds1000, 2)
         rigol_ds1000.trigger_mode = "IIC"
-        rigol_ds1000.trigger_iic_clock_source = "CHAN1"
-        assert rigol_ds1000.trigger_iic_clock_source == "CHAN1"
-        rigol_ds1000.trigger_iic_data_source = "CHAN2"
-        assert rigol_ds1000.trigger_iic_data_source == "CHAN2"
+        rigol_ds1000.trigger_i2c_clock_source = "CHAN1"
+        assert rigol_ds1000.trigger_i2c_clock_source == "CHAN1"
+        rigol_ds1000.trigger_i2c_data_source = "CHAN2"
+        assert rigol_ds1000.trigger_i2c_data_source == "CHAN2"
 
-    @pytest.mark.parametrize("when", ["STAR", "REST", "STOP", "NACK"])
-    def test_trigger_iic_when(self, rigol_ds1000, when):
+    @pytest.mark.parametrize("when", ["STAR", "REST", "STOP", "NACK", "ADDR", "DATA", "ADAT"])
+    def test_trigger_i2c_when(self, rigol_ds1000, when):
         rigol_ds1000.trigger_mode = "IIC"
-        rigol_ds1000.trigger_iic_when = when
-        assert rigol_ds1000.trigger_iic_when == when
+        rigol_ds1000.trigger_i2c_when = when
+        assert rigol_ds1000.trigger_i2c_when == when
 
-    @pytest.mark.parametrize("direction", ["READ", "WRI", "RWR"])
-    def test_trigger_iic_direction(self, rigol_ds1000, direction):
+    @pytest.mark.parametrize("bits", [7, 8, 10])
+    def test_trigger_i2c_address_width(self, rigol_ds1000, bits):
         rigol_ds1000.trigger_mode = "IIC"
-        rigol_ds1000.trigger_iic_direction = direction
-        assert rigol_ds1000.trigger_iic_direction == direction
+        rigol_ds1000.trigger_i2c_when = "ADDR"
+        rigol_ds1000.trigger_i2c_awidth = bits
+        assert rigol_ds1000.trigger_i2c_awidth == bits
 
-    def test_trigger_iic_levels(self, rigol_ds1000):
+    @pytest.mark.parametrize("address", [0, 255, 1012])
+    def test_trigger_i2c_address(self, rigol_ds1000, address):
         rigol_ds1000.trigger_mode = "IIC"
-        rigol_ds1000.trigger_iic_clock_level = 1.5
-        assert rigol_ds1000.trigger_iic_clock_level == pytest.approx(1.5, rel=0.01)
-        rigol_ds1000.trigger_iic_data_level = 1.5
-        assert rigol_ds1000.trigger_iic_data_level == pytest.approx(1.5, rel=0.01)
+        rigol_ds1000.trigger_i2c_when = "ADDR"
+        rigol_ds1000.trigger_i2c_awidth = 10
+        rigol_ds1000.trigger_i2c_address = address
+        assert rigol_ds1000.trigger_i2c_address == address
+
+    @pytest.mark.parametrize("direction", ["READ", "WRIT", "RWR"])
+    def test_trigger_i2c_direction(self, rigol_ds1000, direction):
+        rigol_ds1000.trigger_mode = "IIC"
+        rigol_ds1000.trigger_i2c_direction = direction
+        assert rigol_ds1000.trigger_i2c_direction == direction
+
+    @pytest.mark.parametrize("data_bits", [0, 255, 4096, 2**32 - 1])
+    def test_trigger_i2c_data(self, rigol_ds1000, data_bits):
+        rigol_ds1000.trigger_mode = "IIC"
+        rigol_ds1000.trigger_i2c_when = "DATA"
+        rigol_ds1000.trigger_i2c_data_bits = data_bits
+        assert rigol_ds1000.trigger_i2c_data_bits == data_bits
+
+    def test_trigger_i2c_levels(self, rigol_ds1000):
+        rigol_ds1000.trigger_mode = "IIC"
+        rigol_ds1000.trigger_i2c_clock_level = 1.5
+        assert rigol_ds1000.trigger_i2c_clock_level == pytest.approx(1.5, rel=0.01)
+        rigol_ds1000.trigger_i2c_data_level = 1.5
+        assert rigol_ds1000.trigger_i2c_data_level == pytest.approx(1.5, rel=0.01)
 
 
 # ---------------------------------------------------------------------------
 # Trigger Subsystem – SPI
 # ---------------------------------------------------------------------------
-
-
 class TestTriggerSPI:
     """Test SPI trigger settings."""
 
     def test_trigger_spi_sources(self, rigol_ds1000):
+        _ensure_channel_enabled(rigol_ds1000, 1)
+        _ensure_channel_enabled(rigol_ds1000, 2)
         rigol_ds1000.trigger_mode = "SPI"
         rigol_ds1000.trigger_spi_clock_source = "CHAN1"
         assert rigol_ds1000.trigger_spi_clock_source == "CHAN1"
@@ -923,6 +948,7 @@ class TestTriggerSPI:
 
     def test_trigger_reset_to_edge(self, rigol_ds1000):
         """Restore to edge trigger at the end of all trigger tests."""
+        _ensure_channel_enabled(rigol_ds1000, 1)
         rigol_ds1000.trigger_mode = "EDGE"
         rigol_ds1000.trigger_edge_source = "CHAN1"
         rigol_ds1000.trigger_edge_slope = "POS"
@@ -931,8 +957,6 @@ class TestTriggerSPI:
 # ---------------------------------------------------------------------------
 # Waveform Subsystem
 # ---------------------------------------------------------------------------
-
-
 class TestWaveformSubsystem:
     """Test waveform data acquisition.
 
@@ -942,6 +966,7 @@ class TestWaveformSubsystem:
     """
 
     def test_waveform_source(self, rigol_ds1000):
+        _ensure_channel_enabled(rigol_ds1000, 1)
         rigol_ds1000.waveform_source = "CHAN1"
         assert rigol_ds1000.waveform_source == "CHAN1"
 
@@ -969,6 +994,7 @@ class TestWaveformSubsystem:
     def test_waveform_preamble(self, rigol_ds1000):
         rigol_ds1000.stop()
         sleep(0.3)
+        _ensure_channel_enabled(rigol_ds1000, 1)
         rigol_ds1000.waveform_source = "CHAN1"
         rigol_ds1000.waveform_mode = "NORM"
         preamble = rigol_ds1000.get_waveform_preamble()
@@ -993,6 +1019,7 @@ class TestWaveformSubsystem:
     def test_waveform_axis_parameters(self, rigol_ds1000):
         rigol_ds1000.stop()
         sleep(0.3)
+        _ensure_channel_enabled(rigol_ds1000, 1)
         rigol_ds1000.waveform_source = "CHAN1"
         assert isinstance(rigol_ds1000.waveform_xincrement, float)
         assert isinstance(rigol_ds1000.waveform_xorigin, float)
@@ -1005,6 +1032,7 @@ class TestWaveformSubsystem:
         """Read waveform in BYTE format and convert to voltages."""
         rigol_ds1000.stop()
         sleep(0.3)
+        _ensure_channel_enabled(rigol_ds1000, 1)
         rigol_ds1000.waveform_source = "CHAN1"
         rigol_ds1000.waveform_mode = "NORM"
         rigol_ds1000.waveform_format = "BYTE"
@@ -1016,6 +1044,7 @@ class TestWaveformSubsystem:
         """Read waveform in ASCII format."""
         rigol_ds1000.stop()
         sleep(0.3)
+        _ensure_channel_enabled(rigol_ds1000, 1)
         rigol_ds1000.waveform_source = "CHAN1"
         rigol_ds1000.waveform_mode = "NORM"
         rigol_ds1000.waveform_format = "ASC"
@@ -1032,8 +1061,6 @@ class TestWaveformSubsystem:
 # ---------------------------------------------------------------------------
 # Display Subsystem
 # ---------------------------------------------------------------------------
-
-
 class TestDisplaySubsystem:
     """Test display settings."""
 
@@ -1077,8 +1104,6 @@ class TestDisplaySubsystem:
 # ---------------------------------------------------------------------------
 # Measurement Subsystem
 # ---------------------------------------------------------------------------
-
-
 class TestMeasurementSubsystem:
     """Test measurement settings and functions.
 
@@ -1087,6 +1112,7 @@ class TestMeasurementSubsystem:
 
     @pytest.mark.parametrize("source", ["CHAN1", "CHAN2"])
     def test_measure_source(self, rigol_ds1000, source):
+        _ensure_channel_enabled(rigol_ds1000, source[-1])
         rigol_ds1000.measure_source = source
         assert rigol_ds1000.measure_source == source
 
@@ -1098,6 +1124,7 @@ class TestMeasurementSubsystem:
 
     @pytest.mark.parametrize("source", ["CHAN1", "CHAN2"])
     def test_measure_all_source(self, rigol_ds1000, source):
+        _ensure_channel_enabled(rigol_ds1000, source[-1])
         rigol_ds1000.measure_all_source = source
         assert rigol_ds1000.measure_all_source == source
 
@@ -1115,21 +1142,25 @@ class TestMeasurementSubsystem:
 
     @pytest.mark.parametrize("source", ["CHAN1", "CHAN2", "CHAN3", "CHAN4"])
     def test_measure_phase_source_a(self, rigol_ds1000, source):
+        _ensure_channel_enabled(rigol_ds1000, source[-1])
         rigol_ds1000.measure_phase_source_a = source
         assert rigol_ds1000.measure_phase_source_a == source
 
     @pytest.mark.parametrize("source", ["CHAN1", "CHAN2", "CHAN3", "CHAN4"])
     def test_measure_phase_source_b(self, rigol_ds1000, source):
+        _ensure_channel_enabled(rigol_ds1000, source[-1])
         rigol_ds1000.measure_phase_source_b = source
         assert rigol_ds1000.measure_phase_source_b == source
 
     @pytest.mark.parametrize("source", ["CHAN1", "CHAN2", "CHAN3", "CHAN4"])
     def test_measure_delay_source_a(self, rigol_ds1000, source):
+        _ensure_channel_enabled(rigol_ds1000, source[-1])
         rigol_ds1000.measure_delay_source_a = source
         assert rigol_ds1000.measure_delay_source_a == source
 
     @pytest.mark.parametrize("source", ["CHAN1", "CHAN2", "CHAN3", "CHAN4"])
     def test_measure_delay_source_b(self, rigol_ds1000, source):
+        _ensure_channel_enabled(rigol_ds1000, source[-1])
         rigol_ds1000.measure_delay_source_b = source
         assert rigol_ds1000.measure_delay_source_b == source
 
@@ -1151,6 +1182,7 @@ class TestMeasurementSubsystem:
         """Measure VPP – requires a signal on channel 1."""
         rigol_ds1000.run()
         sleep(0.5)
+        _ensure_channel_enabled(rigol_ds1000, 1)
         rigol_ds1000.measure_source = "CHAN1"
         vpp = rigol_ds1000.measure_item("VPP")
         assert isinstance(vpp, float)
@@ -1159,11 +1191,13 @@ class TestMeasurementSubsystem:
         """Measure frequency – requires a periodic signal on channel 1."""
         rigol_ds1000.run()
         sleep(0.5)
+        _ensure_channel_enabled(rigol_ds1000, 1)
         rigol_ds1000.measure_source = "CHAN1"
         freq = rigol_ds1000.measure_item("FREQ")
         assert isinstance(freq, float)
 
     def test_measure_counter_source(self, rigol_ds1000):
+        _ensure_channel_enabled(rigol_ds1000, 1)
         rigol_ds1000.measure_counter_source = "CHAN1"
         assert rigol_ds1000.measure_counter_source == "CHAN1"
 
@@ -1171,6 +1205,7 @@ class TestMeasurementSubsystem:
         """Read frequency counter – requires a periodic signal on channel 1."""
         rigol_ds1000.run()
         sleep(0.5)
+        _ensure_channel_enabled(rigol_ds1000, 1)
         rigol_ds1000.measure_counter_source = "CHAN1"
         value = rigol_ds1000.measure_counter_value
         assert isinstance(value, float)
@@ -1179,6 +1214,7 @@ class TestMeasurementSubsystem:
         """Test statistic measurement – requires a signal on channel 1."""
         rigol_ds1000.run()
         sleep(0.5)
+        _ensure_channel_enabled(rigol_ds1000, 1)
         stats = rigol_ds1000.measure_item_statistic("VPP", source="CHAN1")
         for key in ("current", "average", "min", "max", "deviation"):
             assert key in stats
@@ -1188,8 +1224,6 @@ class TestMeasurementSubsystem:
 # ---------------------------------------------------------------------------
 # Cursor Subsystem
 # ---------------------------------------------------------------------------
-
-
 class TestCursorSubsystem:
     """Test cursor modes and settings."""
 
@@ -1210,6 +1244,7 @@ class TestCursorSubsystem:
 
         @pytest.mark.parametrize("source", ["CHAN1", "CHAN2", "CHAN3", "CHAN4"])
         def test_cursor_manual_source(self, rigol_ds1000, source):
+            _ensure_channel_enabled(rigol_ds1000, source[-1])
             rigol_ds1000.cursor_mode = "MAN"
             rigol_ds1000.cursor_manual_source = source
             assert rigol_ds1000.cursor_manual_source == source
@@ -1255,12 +1290,14 @@ class TestCursorSubsystem:
 
         @pytest.mark.parametrize("source", ["CHAN1", "CHAN2"])
         def test_cursor_track_source_a(self, rigol_ds1000, source):
+            _ensure_channel_enabled(rigol_ds1000, source[-1])
             rigol_ds1000.cursor_mode = "TRAC"
             rigol_ds1000.cursor_track_source_a = source
             assert rigol_ds1000.cursor_track_source_a == source
 
         @pytest.mark.parametrize("source", ["CHAN1", "CHAN2"])
         def test_cursor_track_source_b(self, rigol_ds1000, source):
+            _ensure_channel_enabled(rigol_ds1000, source[-1])
             rigol_ds1000.cursor_mode = "TRAC"
             rigol_ds1000.cursor_track_source_b = source
             assert rigol_ds1000.cursor_track_source_b == source
@@ -1278,6 +1315,7 @@ class TestCursorSubsystem:
             assert rigol_ds1000.cursor_track_voltage_unit_a == unit
 
         def test_cursor_track_ax(self, rigol_ds1000):
+            _ensure_channel_enabled(rigol_ds1000, 1)
             rigol_ds1000.cursor_mode = "TRAC"
             rigol_ds1000.cursor_track_source_a = "CHAN1"
             rigol_ds1000.cursor_track_ax = 0.0
@@ -1291,6 +1329,7 @@ class TestCursorSubsystem:
 
         @pytest.mark.parametrize("source", ["CHAN1", "CHAN2"])
         def test_cursor_auto_source(self, rigol_ds1000, source):
+            _ensure_channel_enabled(rigol_ds1000, source[-1])
             rigol_ds1000.cursor_mode = "AUTO"
             rigol_ds1000.cursor_auto_source = source
             assert rigol_ds1000.cursor_auto_source == source
@@ -1313,8 +1352,6 @@ class TestCursorSubsystem:
 # ---------------------------------------------------------------------------
 # Math Subsystem
 # ---------------------------------------------------------------------------
-
-
 class TestMathSubsystem:
     """Test math operation settings."""
 
@@ -1332,6 +1369,7 @@ class TestMathSubsystem:
 
     @pytest.mark.parametrize("source", ["CHAN1", "CHAN2", "CHAN3", "CHAN4"])
     def test_math_source1(self, rigol_ds1000, source):
+        _ensure_channel_enabled(rigol_ds1000, source[-1])
         rigol_ds1000.math_display = True
         rigol_ds1000.math_operator = "ADD"
         rigol_ds1000.math_source1 = source
@@ -1339,6 +1377,7 @@ class TestMathSubsystem:
 
     @pytest.mark.parametrize("source", ["CHAN1", "CHAN2", "CHAN3", "CHAN4"])
     def test_math_source2(self, rigol_ds1000, source):
+        _ensure_channel_enabled(rigol_ds1000, source[-1])
         rigol_ds1000.math_display = True
         rigol_ds1000.math_operator = "ADD"
         rigol_ds1000.math_source2 = source
@@ -1374,6 +1413,7 @@ class TestMathSubsystem:
 
         @pytest.mark.parametrize("source", ["CHAN1", "CHAN2"])
         def test_math_fft_source(self, rigol_ds1000, source):
+            _ensure_channel_enabled(rigol_ds1000, source[-1])
             rigol_ds1000.timebase_mode = "MAIN"
             rigol_ds1000.math_display = True
             rigol_ds1000.math_operator = "FFT"
@@ -1437,8 +1477,6 @@ class TestMathSubsystem:
 # ---------------------------------------------------------------------------
 # Math Options Subsystem
 # ---------------------------------------------------------------------------
-
-
 class TestMathOptions:
     """Test math options."""
 
@@ -1472,8 +1510,6 @@ class TestMathOptions:
 # ---------------------------------------------------------------------------
 # Mask Testing Subsystem
 # ---------------------------------------------------------------------------
-
-
 class TestMaskSubsystem:
     """Test pass/fail mask testing.
 
@@ -1481,10 +1517,12 @@ class TestMaskSubsystem:
     """
 
     def test_mask_source(self, rigol_ds1000):
+        _ensure_channel_enabled(rigol_ds1000, 1)
         rigol_ds1000.mask_source = "CHAN1"
         assert rigol_ds1000.mask_source == "CHAN1"
 
     def test_mask_enable_disable(self, rigol_ds1000):
+        _ensure_channel_enabled(rigol_ds1000, 1)
         rigol_ds1000.mask_source = "CHAN1"
         rigol_ds1000.mask_enable = True
         assert rigol_ds1000.mask_enable is True
@@ -1516,6 +1554,7 @@ class TestMaskSubsystem:
 
     def test_mask_create_and_statistics(self, rigol_ds1000):
         """Create a mask and verify statistics can be read."""
+        _ensure_channel_enabled(rigol_ds1000, 1)
         rigol_ds1000.mask_source = "CHAN1"
         rigol_ds1000.mask_x = 0.2
         rigol_ds1000.mask_y = 0.2
@@ -1532,8 +1571,6 @@ class TestMaskSubsystem:
 # ---------------------------------------------------------------------------
 # Storage Subsystem
 # ---------------------------------------------------------------------------
-
-
 class TestStorageSubsystem:
     """Test storage and screenshot settings."""
 
@@ -1557,8 +1594,6 @@ class TestStorageSubsystem:
 # ---------------------------------------------------------------------------
 # System Subsystem
 # ---------------------------------------------------------------------------
-
-
 class TestSystemSubsystem:
     """Test system-level settings."""
 
@@ -1609,8 +1644,6 @@ class TestSystemSubsystem:
 # ---------------------------------------------------------------------------
 # Logic Analyzer Subsystem (MSO models only)
 # ---------------------------------------------------------------------------
-
-
 @pytest.mark.mso_only
 class TestLASubsystem:
     """Test the logic analyzer subsystem.
@@ -1679,8 +1712,6 @@ class TestLASubsystem:
 # ---------------------------------------------------------------------------
 # Reference Waveform Subsystem
 # ---------------------------------------------------------------------------
-
-
 class TestReferenceSubsystem:
     """Test reference waveform functionality."""
 
@@ -1718,6 +1749,7 @@ class TestReferenceSubsystem:
         rigol_ds1000.reference_enable(1, False)
 
     def test_reference_source(self, rigol_ds1000):
+        _ensure_channel_enabled(rigol_ds1000, 1)
         rigol_ds1000.reference_enable(1, True)
         rigol_ds1000.reference_source(1, "CHAN1")
         assert rigol_ds1000.reference_source_get(1) == "CHAN1"
@@ -1727,8 +1759,6 @@ class TestReferenceSubsystem:
 # ---------------------------------------------------------------------------
 # Calibration Subsystem
 # ---------------------------------------------------------------------------
-
-
 class TestCalibrationSubsystem:
     """Test every command and property in the Calibration subsystem."""
 
@@ -1750,8 +1780,6 @@ class TestCalibrationSubsystem:
 # ---------------------------------------------------------------------------
 # Waveform Record Subsystem (Optional feature)
 # ---------------------------------------------------------------------------
-
-
 @pytest.mark.optional
 class TestWaveformRecord:
     """Test waveform recording (optional feature).
@@ -1801,8 +1829,6 @@ class TestWaveformRecord:
 # ---------------------------------------------------------------------------
 # Waveform Replay Subsystem (Optional feature)
 # ---------------------------------------------------------------------------
-
-
 @pytest.mark.optional
 class TestWaveformReplay:
     """Test waveform replay (optional feature, requires recorded frames).
@@ -1844,8 +1870,6 @@ class TestWaveformReplay:
 # ---------------------------------------------------------------------------
 # Source / Function Generator Subsystem (Optional, -S models only)
 # ---------------------------------------------------------------------------
-
-
 @pytest.mark.optional
 class TestSourceSubsystem:
     """Test the built-in function generator (optional, DS1xxxx-S models only).
