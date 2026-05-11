@@ -107,6 +107,7 @@ ENV/
 
 # VSCode
 settings.json
+.claude
 
 # Vim
 *.swp

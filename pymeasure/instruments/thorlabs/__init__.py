@@ -22,6 +22,7 @@
 # THE SOFTWARE.
 #
 
+from .pm400 import ThorlabsPM400
 from .thorlabspm100usb import ThorlabsPM100USB
 from .thorlabspro8000 import ThorlabsPro8000
 from .thorlabsmbxseries import ThorlabsMBXSeries
